@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Vault Pro</title>
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="center">
+  <div class="login-box">
+    <h2>🔐 Vault Pro</h2>
+
+    <button id="btnLogin" class="btn-google">
+      Login with Google
+    </button>
+
+    <input type="password" id="master" placeholder="Master password">
+
+    <button id="btnUnlock" class="btn-unlock">
+      Unlock Vault
+    </button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;width:100%;height:100%">
+  <div class="sidebar">
+    <h3>Vault</h3>
+    <div class="menu">
+      <div data-type="all">All</div>
+      <div data-type="mail">Mail</div>
+      <div data-type="card">Card</div>
+      <div data-type="bank">Bank</div>
+      <div data-type="wifi">Wifi</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="header">
+      <input id="search" placeholder="Search...">
+      <button id="btnNew">+ New</button>
+<button onclick="exportData()">Export</button>
+<button onclick="document.getElementById('importFile').click()">Import</button>
+      <button id="btnLogout">Logout</button>
+    </div>
+
+    <div id="list" class="list"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <select id="type">
+      <option value="mail">Mail</option>
+      <option value="card">Card</option>
+      <option value="bank">Bank</option>
+      <option value="wifi">Wifi</option>
+    </select>
+
+    <input id="title" placeholder="Title">
+    <input id="username" placeholder="Username">
+    <input id="password" placeholder="Password">
+
+    <button id="btnSave">Save</button>
+    <button id="btnCancel">Cancel</button>
+  </div>
+</div>
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- IMPORT FILE -->
+<input type="file" id="importFile" style="display:none">
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
