@@ -3,21 +3,17 @@ import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic
 import { encrypt, decrypt } from "./crypto.js";
 
 export async function loadVault(uid) {
-  const snap = await getDocs(collection(db, "users", uid, "vault"));
-  const data = [];
+  const { db } = await import("./firebase.js");
 
-  for (let d of snap.docs) {
-    const raw = d.data();
+  const ref = collection(db, "users", uid, "vault");
 
-    if (raw.type === "verify") continue;
+  // 🔥 BẮT BUỘC lấy từ server
+  const snap = await getDocs(ref);
 
-    try {
-      const item = JSON.parse(await decrypt(raw.data));
-      data.push({ ...item, id: d.id });
-    } catch {}
-  }
-
-  return data;
+  return snap.docs.map((d) => ({
+    id: d.id,
+    ...d.data()
+  }));
 }
 
 export async function saveVault(uid,item){

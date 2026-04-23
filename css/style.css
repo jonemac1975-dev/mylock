@@ -156,3 +156,137 @@ body{
   border-radius: 8px;
   display: none;
 }
+
+
+
+/* ================= MODAL BACKDROP ================= */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 30, 0.7);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(6px);
+  z-index: 999;
+}
+
+/* ================= MODAL BOX ================= */
+.modal-content {
+  width: 360px;
+  background: linear-gradient(145deg, #1a2235, #121a2b);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.06);
+  animation: pop .2s ease;
+}
+
+/* ================= ANIMATION ================= */
+@keyframes pop {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ================= INPUTS ================= */
+.modal-content select,
+.modal-content input {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #0f172a;
+  color: #fff;
+  outline: none;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.modal-content input:focus,
+.modal-content select:focus {
+  border-color: #4f9cff;
+  box-shadow: 0 0 0 3px rgba(79,156,255,0.15);
+}
+
+/* ================= PLACEHOLDER ================= */
+.modal-content input::placeholder {
+  color: rgba(255,255,255,0.4);
+}
+
+/* ================= BUTTONS ================= */
+.modal-content button {
+  padding: 8px 14px;
+  margin-top: 12px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+/* SAVE */
+.modal-content button.save {
+  background: #4f9cff;
+  color: white;
+}
+
+.modal-content button.save:hover {
+  background: #2f7fe6;
+}
+
+/* CANCEL */
+.modal-content button.cancel {
+  background: rgba(255,255,255,0.08);
+  color: white;
+  margin-left: 6px;
+}
+
+.modal-content button.cancel:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+
+.item {
+  transition: 0.2s;
+  cursor: pointer;
+}
+
+.item:hover {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.03);
+  border-radius: 10px;
+}
+
+<div style="
+  width:30px;
+  height:30px;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,0.08);
+">
+  ${icon}
+</div>
+
+.item {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
