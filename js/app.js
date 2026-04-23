@@ -32,6 +32,8 @@ const master = document.getElementById("master");
 
 /* STATE */
 let user = null;
+let authReady = false;
+
 // 🔥 FIX mobile + PWA login
 (async () => {
   await setPersistence(auth, browserLocalPersistence);
@@ -40,9 +42,12 @@ let user = null;
     const result = await getRedirectResult(auth);
 
     if (result?.user) {
-      console.log("Login OK 😏", result.user);
-      user = result.user;
-    }
+  console.log("Login OK 😏", result.user);
+  user = result.user;
+
+  // 🔥 NGĂN LOOP
+  isRedirecting = false;
+}
   } catch (err) {
     console.error("Redirect error", err);
   } finally {
@@ -58,9 +63,10 @@ let isRedirecting = false;
 
 /* ================= AUTH ================= */
 
-let authReady = false;
 
 onAuthStateChanged(auth, async (u) => {
+  authReady = true; // 🔥 THÊM DÒNG NÀY
+
   if (u) {
     user = u;
     btnLogin.style.display = "none";
@@ -69,13 +75,13 @@ onAuthStateChanged(auth, async (u) => {
 
     showLoginUnlockOnly();
   } else {
-    user = null;
+  user = null;
 
-    // 🔥 CHỈ hiện nút login nếu KHÔNG đang redirect
-    if (!isRedirecting) {
-      btnLogin.style.display = "block";
-    }
+  // 🔥 chỉ hiện login khi đã check auth xong và KHÔNG redirect
+  if (!isRedirecting && authReady) {
+    btnLogin.style.display = "block";
   }
+}
 });
 
 btnLogin.onclick = async () => {
