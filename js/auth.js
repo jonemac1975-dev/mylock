@@ -2,11 +2,9 @@ import { auth } from "./firebase.js";
 
 import {
   GoogleAuthProvider,
-  signInWithRedirect,
+  signInWithPopup,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-let user = null;
 
 export async function login() {
   const provider = new GoogleAuthProvider();
@@ -15,8 +13,8 @@ export async function login() {
     prompt: "select_account"
   });
 
-  // 🔥 QUAN TRỌNG: dùng đúng auth từ firebase.js
-  await signInWithRedirect(auth, provider);
+  const result = await signInWithPopup(auth, provider);
+  return result.user;
 }
 
 export async function logout() {
@@ -25,5 +23,5 @@ export async function logout() {
 }
 
 export function getUser() {
-  return user;
+  return auth.currentUser; // 🔥 chuẩn hơn
 }

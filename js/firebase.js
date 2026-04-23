@@ -3,7 +3,8 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase
 
 import {
   initializeAuth,
-  browserLocalPersistence
+  browserLocalPersistence,
+  browserPopupRedirectResolver
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const config = {
@@ -16,7 +17,7 @@ const app = initializeApp(config);
 
 export const db = getFirestore(app);
 
-// 🔥 FIX QUAN TRỌNG NHẤT
 export const auth = initializeAuth(app, {
-  persistence: browserLocalPersistence
+  persistence: browserLocalPersistence,
+  popupRedirectResolver: browserPopupRedirectResolver
 });
