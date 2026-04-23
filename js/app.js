@@ -38,11 +38,15 @@ let user = null;
 
   try {
     const result = await getRedirectResult(auth);
+
     if (result?.user) {
       console.log("Login OK 😏", result.user);
+      user = result.user;
     }
   } catch (err) {
     console.error("Redirect error", err);
+  } finally {
+    isRedirecting = false;
   }
 })();
 
@@ -50,14 +54,13 @@ let data = [];
 let filter = "all";
 let editingId = null;
 let lockTimer;
+let isRedirecting = false;
 
 /* ================= AUTH ================= */
 
 let authReady = false;
 
 onAuthStateChanged(auth, async (u) => {
-  authReady = true;
-
   if (u) {
     user = u;
     btnLogin.style.display = "none";
@@ -67,12 +70,18 @@ onAuthStateChanged(auth, async (u) => {
     showLoginUnlockOnly();
   } else {
     user = null;
-    btnLogin.style.display = "block";
+
+    // 🔥 CHỈ hiện nút login nếu KHÔNG đang redirect
+    if (!isRedirecting) {
+      btnLogin.style.display = "block";
+    }
   }
 });
 
 btnLogin.onclick = async () => {
-  if (user) return; // 🔥 tránh loop
+  if (user || isRedirecting) return;
+
+  isRedirecting = true;
   await login();
 };
 
