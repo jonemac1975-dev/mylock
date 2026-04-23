@@ -56,9 +56,7 @@ let lockTimer;
 let authReady = false;
 
 onAuthStateChanged(auth, async (u) => {
-  if (!authReady) {
-    authReady = true;
-  }
+  authReady = true;
 
   if (u) {
     user = u;
@@ -86,23 +84,56 @@ btnLogout.onclick = async () => {
 /* ================= UNLOCK ================= */
 
 btnUnlock.onclick = async () => {
-  if (!user) return alert("Login trước");
-  if (!master.value) return alert("Nhập master password");
+  // 🔒 tránh spam click
+  btnUnlock.disabled = true;
 
-  await initKey(master.value);
+  try {
+    // ⏳ chưa xác định auth xong
+    if (!authReady) {
+      showToast("Đang kiểm tra đăng nhập...");
+      return;
+    }
 
-  const ok = await verifyPassword();
+    // ❌ chưa login
+    if (!user) {
+      showToast("Chưa đăng nhập");
+      return;
+    }
 
-  if (!ok) {
-    alert("❌ Sai master password");
-    return;
+    // ❌ chưa nhập master
+    if (!master.value) {
+      showToast("Nhập master password");
+      return;
+    }
+
+    // 🔐 init key
+    await initKey(master.value);
+
+    // ✅ verify password
+    const ok = await verifyPassword();
+
+    if (!ok) {
+      showToast("❌ Sai master password");
+      master.value = "";
+      return;
+    }
+
+    // ✅ unlock thành công
+    sessionStorage.setItem("unlocked", "1");
+
+    showApp();
+    await loadData();
+    startAutoLock();
+
+    showToast("Mở vault thành công 😏");
+
+  } catch (err) {
+    console.error("Unlock error:", err);
+    showToast("Có lỗi xảy ra");
+  } finally {
+    // 🔓 mở lại nút
+    btnUnlock.disabled = false;
   }
-
-  sessionStorage.setItem("unlocked", "1");
-
-  showApp();
-  await loadData();
-startAutoLock();
 };
 
 async function verifyPassword() {
