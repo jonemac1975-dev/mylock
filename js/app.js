@@ -3,6 +3,8 @@ import { initKey, decrypt } from "./crypto.js";
 import { loadVault, saveVault, deleteVault, initVault } from "./vault.js";
 import { auth } from "./firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getRedirectResult, setPersistence, browserLocalPersistence } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 /* DOM */
 const loginBox = document.getElementById("login");
@@ -27,6 +29,21 @@ const master = document.getElementById("master");
 
 /* STATE */
 let user = null;
+// 🔥 FIX mobile + PWA login
+(async () => {
+  await setPersistence(auth, browserLocalPersistence);
+
+  getRedirectResult(auth)
+    .then((result) => {
+      if (result?.user) {
+        console.log("Login OK 😏", result.user);
+      }
+    })
+    .catch((err) => {
+      console.error("Redirect error", err);
+    });
+})();
+
 let data = [];
 let filter = "all";
 let editingId = null;
