@@ -15,7 +15,7 @@ export async function login() {
     prompt: "select_account"
   });
 
-  // 🔥 dùng redirect thay vì popup
+  // 🔥 QUAN TRỌNG: dùng đúng auth từ firebase.js
   await signInWithRedirect(auth, provider);
 }
 
