@@ -16,9 +16,28 @@ export async function loadVault(uid) {
   }));
 }
 
-export async function saveVault(uid,item){
- const enc=await encrypt(JSON.stringify(item));
- await addDoc(collection(db,"users",uid,"vault"),{data:enc});
+export async function saveVault(uid, item) {
+  const { collection, addDoc } = await import(
+    "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+  );
+  const { db } = await import("./firebase.js");
+
+  // 🔥 CASE VERIFY (KHÔNG stringify nữa)
+  if (item.type === "verify") {
+    await addDoc(collection(db, "users", uid, "vault"), {
+      type: "verify",
+      data: item.data
+    });
+    return;
+  }
+
+  // 🔥 CASE NORMAL
+  const encrypted = await encrypt(JSON.stringify(item));
+
+  await addDoc(collection(db, "users", uid, "vault"), {
+    type: item.type,
+    data: encrypted
+  });
 }
 
 export async function deleteVault(uid,id){
@@ -27,13 +46,6 @@ export async function deleteVault(uid,id){
 
 // thêm vào file
 export async function initVault(uid) {
-  const snap = await getDocs(collection(db, "users", uid, "vault"));
-
-  if (snap.empty) {
-    const verify = await encrypt("vault_ok");
-    await addDoc(collection(db, "users", uid, "vault"), {
-      type: "verify",
-      data: verify
-    });
-  }
+  // ❌ KHÔNG làm gì ở đây nữa
+//  return;
 }

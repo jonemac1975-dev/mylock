@@ -1,5 +1,5 @@
 import { login, logout, getUser } from "./auth.js";
-import { initKey, decrypt } from "./crypto.js";
+
 import { loadVault, saveVault, deleteVault, initVault } from "./vault.js";
 import { auth } from "./firebase.js";
 import {
@@ -8,6 +8,7 @@ import {
   setPersistence,
   browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { initKey, decrypt, encrypt } from "./crypto.js";
 
 /* DOM */
 const loginBox = document.getElementById("login");
@@ -29,6 +30,15 @@ const title = document.getElementById("title");
 const username = document.getElementById("username");
 const password = document.getElementById("password");
 const master = document.getElementById("master");
+
+const subType = document.getElementById("subType");
+
+const formDefault = document.getElementById("form-default");
+const formInfo = document.getElementById("form-info");
+
+const infoPersonal = document.getElementById("info-personal");
+const infoWeb = document.getElementById("info-web");
+const infoNote = document.getElementById("info-note");
 
 /* STATE */
 let user = null;
@@ -114,16 +124,47 @@ btnUnlock.onclick = async () => {
   try {
     await initKey(master.value);
 
-    const ok = await verifyPassword();
-    if (!ok) return showToast("❌ Sai master password");
+    const raw = await loadVaultRaw();
 
+    let verifyItem = raw.find(i => i.type === "verify");
+
+    // 🔥 CASE 1: CHƯA có verify → tạo mới
+    if (!verifyItem) {
+      console.log("🔥 Chưa có verify → tạo mới");
+
+      const verify = await encrypt("vault_ok");
+
+      await saveVault(user.uid, {
+        type: "verify",
+        data: verify
+      });
+
+      showToast("🔐 Tạo master password lần đầu");
+
+      localStorage.setItem("unlocked", "1");
+      showApp();
+      await loadData();
+      startAutoLock();
+      return;
+    }
+
+    // 🔥 CASE 2: Đã có verify → check pass
+    try {
+      const res = await decrypt(verifyItem.data);
+
+      if (res !== "vault_ok") {
+        return showToast("❌ Sai master password");
+      }
+
+    } catch {
+      return showToast("❌ Sai master password");
+    }
+
+    // ✅ PASS ĐÚNG
     localStorage.setItem("unlocked", "1");
 
     showApp();
-
-    // 🔥 CHỈ LOAD Ở ĐÂY
     await loadData();
-
     startAutoLock();
 
   } catch (err) {
@@ -135,18 +176,17 @@ btnUnlock.onclick = async () => {
 async function verifyPassword() {
   const snap = await loadVaultRaw();
 
-  for (let item of snap) {
-    if (item.type === "verify") {
-      try {
-        const res = await decrypt(item.data);
-        return res === "vault_ok";
-      } catch {
-        return false;
-      }
-    }
-  }
+  const verifyItem = snap.find(i => i.type === "verify");
 
-  return true;
+  // 🔥 chưa có verify
+  if (!verifyItem) return "NO_VERIFY";
+
+  try {
+    const res = await decrypt(verifyItem.data);
+    return res === "vault_ok";
+  } catch {
+    return false;
+  }
 }
 
 /* lấy raw data để check */
@@ -220,12 +260,24 @@ if (!localStorage.getItem("unlocked")) {
   alert("Chưa unlock vault");
   return;
 }
-  const item = {
+  let item;
+
+// 🔥 nếu là info
+if (type.value === "info") {
+  item = {
+    type: "info",
+    subType: subType.value,
+    data: collectInfoData()
+  };
+} else {
+  // 🔥 giữ nguyên logic cũ
+  item = {
     type: type.value,
     title: title.value,
     username: username.value,
     password: password.value
   };
+}
 if (editingId) {
   await deleteVault(user.uid, editingId);
   editingId = null;
@@ -235,6 +287,37 @@ if (editingId) {
   closeModal();
   await loadData();
 };
+
+
+function collectInfoData() {
+  if (subType.value === "personal") {
+    return {
+      fullName: document.getElementById("fullName").value,
+      birth: document.getElementById("birth").value,
+      tel: document.getElementById("tel").value,
+      address: document.getElementById("address").value,
+      email: document.getElementById("email").value,
+      note: document.getElementById("note").value
+    };
+  }
+
+  if (subType.value === "web") {
+    return {
+      site: document.getElementById("site").value,
+      note: document.getElementById("noteWeb").value
+    };
+  }
+
+  if (subType.value === "note") {
+    return {
+      date: document.getElementById("date").value,
+      content: document.getElementById("content").value
+    };
+  }
+
+  return {};
+}
+
 
 /* ================= DELETE ================= */
 
@@ -277,12 +360,28 @@ function render() {
   };
 
   data
-    .filter((i) =>
-      i.type !== "verify" &&
-      (filter === "all" || i.type === filter) &&
-      (i.title || "").toLowerCase().includes(q)
-    )
+    .filter((i) => {
+  const text = (
+    i.title ||
+    i.data?.fullName ||
+    i.data?.site ||
+    i.data?.content ||
+    ""
+  ).toLowerCase();
+
+  return (
+    i.type !== "verify" &&
+    (filter === "all" || i.type === filter) &&
+    text.includes(q)
+  );
+})
+    
     .forEach((i) => {
+	// 🔥 render riêng cho info
+	if (i.type === "info") {
+	  return renderInfoItem(i);
+	}
+
       const div = document.createElement("div");
       div.className = "item";
 
@@ -322,15 +421,34 @@ function render() {
       btnEdit.textContent = "✏️";
 
       btnEdit.onclick = () => {
-        editingId = i.id;
+  editingId = i.id;
 
-        type.value = i.type;
-        title.value = i.title;
-        username.value = i.username;
-        password.value = i.password;
+  type.value = i.type;
 
-        modal.style.display = "flex";
-      };
+  if (i.type === "info") {
+    subType.value = i.subType;
+    renderSubTypeUI();
+    
+    title.value =
+      i.data.fullName ||
+      i.data.site ||
+      "";
+
+    username.value =
+      i.data.tel || "";
+
+    password.value =
+      i.data.note ||
+      i.data.content ||
+      "";
+  } else {
+    title.value = i.title;
+    username.value = i.username;
+    password.value = i.password;
+  }
+
+  modal.style.display = "flex";
+};
 
       // ================= BUTTON SHOW =================
       const btnShow = document.createElement("button");
@@ -384,14 +502,155 @@ function render() {
 }
 
 
+function renderInfoItem(i) {
+  const div = document.createElement("div");
+  div.className = "item";
+
+  // ===== CONTENT =====
+  if (i.subType === "personal") {
+    div.innerHTML = `
+      👤 <b>${i.data.fullName || ""}</b>
+      <div>${i.data.tel || ""}</div>
+      <div>${i.data.note || ""}</div>
+    `;
+  }
+
+  if (i.subType === "web") {
+    div.innerHTML = `
+      🌐 ${i.data.site || ""}
+      <div>${i.data.note || ""}</div>
+    `;
+  }
+
+  if (i.subType === "note") {
+    div.innerHTML = `
+      📝 ${i.data.date || ""}
+      <div>${i.data.content || ""}</div>
+    `;
+  }
+
+  // ===== ACTION =====
+  const action = document.createElement("div");
+  action.style.marginTop = "8px";
+  action.style.display = "flex";
+  action.style.gap = "6px";
+
+  // ✏️ EDIT
+  const btnEdit = document.createElement("button");
+  btnEdit.className = "btn";
+  btnEdit.textContent = "✏️";
+
+  btnEdit.onclick = () => {
+    editingId = i.id;
+
+    type.value = "info";
+    formDefault.style.display = "none";
+    formInfo.style.display = "block";
+
+    subType.value = i.subType;
+    renderSubTypeUI();
+
+    // fill data
+    if (i.subType === "personal") {
+      document.getElementById("fullName").value = i.data.fullName || "";
+      document.getElementById("birth").value = i.data.birth || "";
+      document.getElementById("tel").value = i.data.tel || "";
+      document.getElementById("address").value = i.data.address || "";
+      document.getElementById("email").value = i.data.email || "";
+      document.getElementById("note").value = i.data.note || "";
+    }
+
+    if (i.subType === "web") {
+      document.getElementById("site").value = i.data.site || "";
+      document.getElementById("noteWeb").value = i.data.note || "";
+    }
+
+    if (i.subType === "note") {
+      document.getElementById("date").value = i.data.date || "";
+      document.getElementById("content").value = i.data.content || "";
+    }
+
+    modal.style.display = "flex";
+  };
+
+  // 👁️ VIEW (chỉ mở modal, disable input)
+  const btnView = document.createElement("button");
+  btnView.className = "btn";
+  btnView.textContent = "👁️";
+
+  btnView.onclick = () => {
+    btnEdit.onclick(); // reuse edit
+
+    // disable input
+    document.querySelectorAll("#form-info input").forEach(i => i.disabled = true);
+  };
+
+  // 🗑️ DELETE
+  const btnDel = document.createElement("button");
+  btnDel.className = "btn";
+  btnDel.textContent = "🗑️";
+
+  btnDel.onclick = async () => {
+    if (confirm("Xóa item này?")) {
+      await deleteVault(user.uid, i.id);
+      await loadData();
+    }
+  };
+
+  action.appendChild(btnEdit);
+  action.appendChild(btnView);
+  action.appendChild(btnDel);
+
+  div.appendChild(action);
+
+  list.appendChild(div);
+}
+
 /* ================= MODAL ================= */
 
-btnNew.onclick = () => (modal.style.display = "flex");
+btnNew.onclick = () => {
+  editingId = null;
+
+  // reset type
+  type.value = "mail";
+
+  // reset form thường
+  title.value = "";
+  username.value = "";
+  password.value = "";
+
+  // reset form info
+  subType.value = "personal";
+   renderSubTypeUI();
+
+  document.getElementById("fullName").value = "";
+  document.getElementById("birth").value = "";
+  document.getElementById("tel").value = "";
+  document.getElementById("address").value = "";
+  document.getElementById("email").value = "";
+  document.getElementById("note").value = "";
+
+  document.getElementById("site").value = "";
+  document.getElementById("noteWeb").value = "";
+
+  document.getElementById("date").value = "";
+  document.getElementById("content").value = "";
+
+  // reset UI
+  formDefault.style.display = "block";
+  formInfo.style.display = "none";
+
+  modal.style.display = "flex";
+};
 
 btnCancel.onclick = closeModal;
 
 function closeModal() {
   modal.style.display = "none";
+
+  // enable lại input
+  document.querySelectorAll("input").forEach(i => i.disabled = false);
+
   title.value = "";
   username.value = "";
   password.value = "";
@@ -422,22 +681,77 @@ function showToast(msg) {
   }, 2000);
 }
 
-window.exportData = () => {
-  const payload = {
-    time: new Date().toISOString(),
-    data: data
-  };
 
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: "application/json"
-  });
 
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "vault_backup.json";
-  a.click();
+type.onchange = () => {
+  if (type.value === "info") {
+    formDefault.style.display = "none";
+    formInfo.style.display = "block";
+  } else {
+    formDefault.style.display = "block";
+    formInfo.style.display = "none";
+  }
+};
 
-  showToast("Đã export!");
+
+subType.onchange = () => {
+  infoPersonal.style.display = "none";
+  infoWeb.style.display = "none";
+  infoNote.style.display = "none";
+
+  if (subType.value === "personal") {
+    infoPersonal.style.display = "block";
+  }
+
+  if (subType.value === "web") {
+    infoWeb.style.display = "block";
+  }
+
+  if (subType.value === "note") {
+    infoNote.style.display = "block";
+  }
+};
+
+
+
+window.exportData = async () => {
+  const pass = prompt("Nhập master password để export");
+
+  if (!pass) return;
+
+  try {
+    // 🔐 tạo key từ pass nhập
+    await initKey(pass);
+
+    // 🔥 verify giống unlock
+    const ok = await verifyPassword();
+
+    if (!ok) {
+      showToast("❌ Sai password - không cho export");
+      return;
+    }
+
+    // 🔥 EXPORT DATA (đã mã hóa sẵn)
+    const payload = {
+      time: new Date().toISOString(),
+      data: await loadVault(user.uid) // 🔥 lấy raw encrypted
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json"
+    });
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "vault_secure_backup.json";
+    a.click();
+
+    showToast("✅ Export an toàn!");
+    
+  } catch (err) {
+    console.error(err);
+    showToast("Lỗi export");
+  }
 };
 
 const importInput = document.getElementById("importFile");
@@ -447,17 +761,56 @@ if (importInput) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const text = await file.text();
-    const json = JSON.parse(text);
+    const pass = prompt("🔐 Nhập password file backup:");
+    if (!pass) return;
 
-    const arr = json.data || json;
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
 
-    for (let item of arr) {
-      await saveVault(user.uid, item);
+      const enc = new TextEncoder();
+      const dec = new TextDecoder();
+
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        enc.encode(pass),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+      );
+
+      const key = await crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: new Uint8Array(json.salt),
+          iterations: 100000,
+          hash: "SHA-256"
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["decrypt"]
+      );
+
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: new Uint8Array(json.iv) },
+        key,
+        new Uint8Array(json.data)
+      );
+
+      const parsed = JSON.parse(dec.decode(decrypted));
+
+      // save lại vào Firestore
+      for (let item of parsed) {
+        await saveVault(user.uid, item);
+      }
+
+      await loadData();
+      showToast("✅ Import OK");
+    } catch (err) {
+      console.error(err);
+      showToast("❌ Sai password hoặc file lỗi");
     }
-
-    await loadData();
-    showToast("Import xong!");
   };
 }
 
@@ -515,3 +868,103 @@ function getIcon(item) {
 
   return iconMap.default;
 }
+
+
+function renderSubTypeUI() {
+  // reset tất cả
+  infoPersonal.style.display = "none";
+  infoWeb.style.display = "none";
+  infoNote.style.display = "none";
+
+  // show đúng cái cần
+  if (subType.value === "personal") {
+    infoPersonal.style.display = "block";
+  }
+
+  if (subType.value === "web") {
+    infoWeb.style.display = "block";
+  }
+
+  if (subType.value === "note") {
+    infoNote.style.display = "block";
+  }
+}
+// gán event
+subType.onchange = renderSubTypeUI;
+
+
+window.changeMasterPassword = async () => {
+  const oldPass = prompt("Nhập mật khẩu cũ");
+  const newPass = prompt("Nhập mật khẩu mới");
+
+  if (!oldPass || !newPass) return;
+
+  try {
+    // 🔐 init key cũ
+    await initKey(oldPass);
+
+    const raw = await loadVault(user.uid);
+
+    // 🔥 check verify
+    const verifyItem = raw.find(i => i.type === "verify");
+
+    if (verifyItem) {
+      const res = await decrypt(verifyItem.data);
+      if (res !== "vault_ok") {
+        return showToast("❌ Sai mật khẩu cũ");
+      }
+    }
+
+    // 🔓 decrypt toàn bộ
+    const plainData = [];
+
+    for (let item of raw) {
+      if (item.type === "verify") continue;
+
+      const text = await decrypt(item.data);
+      plainData.push({
+        id: item.id,
+        ...JSON.parse(text)
+      });
+    }
+
+    // 🔐 init key mới
+    await initKey(newPass);
+
+    // 🔥 XÓA HẾT vault cũ
+    for (let item of raw) {
+      await deleteVault(user.uid, item.id);
+    }
+
+    // 🔥 lưu lại với key mới
+    for (let item of plainData) {
+      await saveVault(user.uid, item);
+    }
+
+    // 🔐 tạo verify mới
+    const verify = await encrypt("vault_ok");
+
+    await saveVault(user.uid, {
+      type: "verify",
+      data: verify
+    });
+
+    showToast("✅ Đổi mật khẩu thành công");
+
+  } catch (err) {
+    console.error(err);
+    showToast("Lỗi đổi mật khẩu");
+  }
+};
+
+document.querySelectorAll(".menu div").forEach((el) => {
+  el.onclick = () => {
+    document.querySelectorAll(".menu div").forEach(x => x.classList.remove("active"));
+    el.classList.add("active");
+
+    filter = el.dataset.type;
+    render();
+  };
+});
+
+

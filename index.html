@@ -54,6 +54,7 @@
       <div data-type="bank">🏦 Bank</div>
       <div data-type="wifi">📶 Wifi</div>
       <div data-type="khac">🔒 Another</div>
+      <div data-type="info">🧠 Information</div>
     </div>
   </div>
 
@@ -63,6 +64,7 @@
       <button id="btnNew">+ New</button>
 <button onclick="exportData()">Export</button>
 <button onclick="document.getElementById('importFile').click()">Import</button>
+<button onclick="changeMasterPassword()">🔐 Change Password</button>
       <button id="btnLogout">Logout</button>
     </div>
 
@@ -73,21 +75,59 @@
 <!-- MODAL -->
 <div id="modal" class="modal">
   <div class="modal-content">
-    <select id="type">
-      <option value="mail">Mail</option>
-      <option value="card">Card</option>
-      <option value="bank">Bank</option>
-      <option value="wifi">Wifi</option>
-      <option value="khac">Another</option>
-    </select>
 
+  <select id="type">
+    <option value="mail">Mail</option>
+    <option value="card">Card</option>
+    <option value="bank">Bank</option>
+    <option value="wifi">Wifi</option>
+    <option value="khac">Another</option>
+    <option value="info">Information</option>
+  </select>
+
+  <!-- 🔥 FORM CŨ -->
+  <div id="form-default">
     <input id="title" placeholder="Title">
     <input id="username" placeholder="Username">
     <input id="password" placeholder="Password">
-
-    <button id="btnSave">Save</button>
-    <button id="btnCancel">Cancel</button>
   </div>
+
+  <!-- 🔥 FORM INFO -->
+  <div id="form-info" style="display:none">
+
+    <select id="subType">
+      <option value="personal">👤 Personal</option>
+      <option value="web">🌐 Web Info</option>
+      <option value="note">📝 Note</option>
+    </select>
+
+    <!-- PERSONAL -->
+    <div id="info-personal">
+      <input id="fullName" placeholder="Full name">
+      <input id="birth" type="date">
+      <input id="tel" placeholder="Tel">
+      <input id="address" placeholder="Address">
+      <input id="email" placeholder="Email">
+      <input id="note" placeholder="Note">
+    </div>
+
+    <!-- WEB -->
+    <div id="info-web" style="display:none">
+      <input id="site" placeholder="https://">
+      <input id="noteWeb" placeholder="Note">
+    </div>
+
+    <!-- NOTE -->
+    <div id="info-note" style="display:none">
+      <input id="date" type="date">
+      <input id="content" placeholder="Content">
+    </div>
+
+  </div>
+
+  <button id="btnSave">Save</button>
+  <button id="btnCancel">Cancel</button>
+</div>
 </div>
 <!-- TOAST -->
 <div id="toast"></div>
