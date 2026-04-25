@@ -1114,63 +1114,75 @@ function renderSocialItem(i) {
 }
 
 
-window.registerBiometric = async () => {
-  const challenge = new Uint8Array(32);
-  window.crypto.getRandomValues(challenge);
 
-  const cred = await navigator.credentials.create({
-    publicKey: {
-      challenge,
-      rp: { name: "Vault App" },
-      user: {
-        id: new TextEncoder().encode(user.uid),
-        name: user.email,
-        displayName: user.email
-      },
-      pubKeyCredParams: [{ type: "public-key", alg: -7 }],
-      authenticatorSelection: {
-        authenticatorAttachment: "platform",
-        userVerification: "required"
-      },
-      timeout: 60000,
-      attestation: "none"
-    }
-  });
 
-  localStorage.setItem("biometric_enabled", "1");
+window.registerFaceID = async () => {
+  try {
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: new Uint8Array(32),
 
-  showToast("✅ Đã bật Face ID");
+        rp: { name: "Vault App" },
+
+        user: {
+          id: new Uint8Array(16),
+          name: user.email,
+          displayName: user.email
+        },
+
+        pubKeyCredParams: [
+          { type: "public-key", alg: -7 }
+        ],
+
+        authenticatorSelection: {
+          authenticatorAttachment: "platform", // dùng Face ID
+          userVerification: "required"
+        },
+
+        timeout: 60000,
+        attestation: "none"
+      }
+    });
+
+    // 👉 lưu lại (simple version)
+    localStorage.setItem("faceid", "1");
+
+    showToast("✅ Đã đăng ký Face ID");
+
+  } catch (err) {
+    console.error(err);
+    showToast("❌ Đăng ký thất bại");
+  }
 };
 
-
-window.loginBiometric = async () => {
-  if (!localStorage.getItem("biometric_enabled")) {
-    return showToast("Chưa đăng ký Face ID");
+window.loginFaceID = async () => {
+  if (!localStorage.getItem("faceid")) {
+    return showToast("❌ Chưa đăng ký Face ID");
   }
-
-  const challenge = new Uint8Array(32);
-  window.crypto.getRandomValues(challenge);
 
   try {
     await navigator.credentials.get({
       publicKey: {
-        challenge,
+        challenge: new Uint8Array(32),
         userVerification: "required",
         timeout: 60000
       }
     });
 
-    // 👉 nếu pass → unlock luôn
+    showToast("✅ Face ID OK");
+
     localStorage.setItem("unlocked", "1");
+
     showApp();
     await loadData();
+    startAutoLock();
 
-    showToast("🔓 Mở bằng Face ID");
-
-  } catch {
-    showToast("❌ Face ID fail");
+  } catch (err) {
+    console.error(err);
+    showToast("❌ Face ID thất bại");
   }
 };
+
 
 function smartMatch(text, query) {
   text = text.toLowerCase();
