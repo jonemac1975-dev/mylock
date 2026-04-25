@@ -1,7 +1,7 @@
 import { login, logout, getUser } from "./auth.js";
 
 import { loadVault, saveVault, deleteVault, initVault } from "./vault.js";
-import { auth } from "./firebase.js";
+import { db,auth } from "./firebase.js";
 import {
   onAuthStateChanged,
   getRedirectResult,
@@ -9,6 +9,9 @@ import {
   browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { initKey, decrypt, encrypt } from "./crypto.js";
+
+
+
 
 /* DOM */
 const loginBox = document.getElementById("login");
@@ -40,6 +43,12 @@ const infoPersonal = document.getElementById("info-personal");
 const infoWeb = document.getElementById("info-web");
 const infoNote = document.getElementById("info-note");
 
+const socialForm = document.getElementById("form-social");
+const socialUrl = document.getElementById("social_url");
+const socialUser = document.getElementById("social_user");
+const socialPass = document.getElementById("social_pass");
+
+
 /* STATE */
 let user = null;
 let authReady = false;
@@ -52,14 +61,14 @@ let authReady = false;
     const result = await getRedirectResult(auth);
 
     if (result?.user) {
-//  console.log("Login OK 😏", result.user);
+
   user = result.user;
 
   // 🔥 NGĂN LOOP
   isRedirecting = false;
 }
   } catch (err) {
-//    console.error("Redirect error", err);
+
   } finally {
     isRedirecting = false;
   }
@@ -130,7 +139,7 @@ btnUnlock.onclick = async () => {
 
     // 🔥 CASE 1: CHƯA có verify → tạo mới
     if (!verifyItem) {
-      console.log("🔥 Chưa có verify → tạo mới");
+      
 
       const verify = await encrypt("vault_ok");
 
@@ -214,7 +223,7 @@ async function loadData() {
   try {
     // 🔥 load raw từ Firestore
     const raw = await loadVault(user.uid);
-//    console.log("DATA RAW:", raw);
+
 
     const decrypted = [];
 
@@ -242,13 +251,13 @@ async function loadData() {
     // 🔥 gán lại data đã xử lý
     data = decrypted;
 
-//    console.log("DATA DECRYPTED:", data);
+
 
     // 🔥 render (không cần setTimeout nữa)
     render();
 
   } catch (err) {
-//    console.error("❌ loadData lỗi:", err);
+
     showToast("Lỗi tải dữ liệu");
   }
 }
@@ -256,33 +265,52 @@ async function loadData() {
 /* ================= SAVE ================= */
 
 btnSave.onclick = async () => {
-if (!localStorage.getItem("unlocked")) {
-  alert("Chưa unlock vault");
-  return;
-}
+  if (!localStorage.getItem("unlocked")) {
+    alert("Chưa unlock vault");
+    return;
+  }
+
   let item;
 
-// 🔥 nếu là info
-if (type.value === "info") {
-  item = {
-    type: "info",
-    subType: subType.value,
-    data: collectInfoData()
-  };
-} else {
-  // 🔥 giữ nguyên logic cũ
-  item = {
-    type: type.value,
-    title: title.value,
-    username: username.value,
-    password: password.value
-  };
-}
-if (editingId) {
-  await deleteVault(user.uid, editingId);
-  editingId = null;
-}
+  // ===== SOCIAL =====
+  if (type.value === "social") {
+    item = {
+      type: "social",
+      data: {
+        url: socialUrl.value,
+        username: socialUser.value,
+        password: socialPass.value
+      }
+    };
+  }
+
+  // ===== INFO =====
+  else if (type.value === "info") {
+    item = {
+      type: "info",
+      subType: subType.value,
+      data: collectInfoData()
+    };
+  }
+
+  // ===== DEFAULT =====
+  else {
+    item = {
+      type: type.value,
+      title: title.value,
+      username: username.value,
+      password: password.value
+    };
+  }
+
+  // ===== UPDATE =====
+  if (editingId) {
+    await deleteVault(user.uid, editingId);
+    editingId = null;
+  }
+
   await saveVault(user.uid, item);
+
   autoBackup();
   closeModal();
   await loadData();
@@ -361,22 +389,20 @@ function render() {
 
   data
     .filter((i) => {
-  const text = (
-    i.title ||
-    i.data?.fullName ||
-    i.data?.site ||
-    i.data?.content ||
-    ""
-  ).toLowerCase();
+  const text = buildSearchText(i);
 
   return (
     i.type !== "verify" &&
     (filter === "all" || i.type === filter) &&
-    text.includes(q)
+    smartMatch(text, q)
   );
 })
     
     .forEach((i) => {
+
+	if (i.type === "social") {
+	  return renderSocialItem(i);
+	}
 	// 🔥 render riêng cho info
 	if (i.type === "info") {
 	  return renderInfoItem(i);
@@ -611,36 +637,53 @@ function renderInfoItem(i) {
 btnNew.onclick = () => {
   editingId = null;
 
-  // reset type
+  // ===== RESET TYPE =====
   type.value = "mail";
+  subType.value = "personal";
 
-  // reset form thường
+  // ===== RESET FORM DEFAULT =====
   title.value = "";
   username.value = "";
   password.value = "";
 
-  // reset form info
-  subType.value = "personal";
-   renderSubTypeUI();
+  // ===== RESET SOCIAL =====
+  if (socialUrl) socialUrl.value = "";
+  if (socialUser) socialUser.value = "";
+  if (socialPass) socialPass.value = "";
 
-  document.getElementById("fullName").value = "";
-  document.getElementById("birth").value = "";
-  document.getElementById("tel").value = "";
-  document.getElementById("address").value = "";
-  document.getElementById("email").value = "";
-  document.getElementById("note").value = "";
+  // ===== RESET INFO =====
+  const setVal = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  };
 
-  document.getElementById("site").value = "";
-  document.getElementById("noteWeb").value = "";
+  setVal("fullName");
+  setVal("birth");
+  setVal("tel");
+  setVal("address");
+  setVal("email");
+  setVal("note");
 
-  document.getElementById("date").value = "";
-  document.getElementById("content").value = "";
+  setVal("site");
+  setVal("noteWeb");
 
-  // reset UI
-  formDefault.style.display = "block";
-  formInfo.style.display = "none";
+  setVal("date");
+  setVal("content");
 
+  // ===== ENABLE INPUT (fix case view mode trước đó) =====
+  document.querySelectorAll("#modal input").forEach(i => i.disabled = false);
+
+  // ===== RESET UI FORM =====
+  toggleForm();        // 🔥 quyết định form nào hiện (default/info/social)
+  renderSubTypeUI();   // 🔥 hiển thị đúng personal/web/note
+
+  // ===== SHOW MODAL =====
   modal.style.display = "flex";
+
+  // ===== AUTO FOCUS CHO MƯỢT =====
+  setTimeout(() => {
+    modal.querySelector("input")?.focus();
+  }, 100);
 };
 
 btnCancel.onclick = closeModal;
@@ -684,13 +727,7 @@ function showToast(msg) {
 
 
 type.onchange = () => {
-  if (type.value === "info") {
-    formDefault.style.display = "none";
-    formInfo.style.display = "block";
-  } else {
-    formDefault.style.display = "block";
-    formInfo.style.display = "none";
-  }
+  toggleForm();
 };
 
 
@@ -860,6 +897,18 @@ async function waitForAuth() {
 function getIcon(item) {
   const title = (item.title || "").toLowerCase().trim();
 
+const iconMap = {
+  facebook: "📘",
+  fb: "📘",
+  gmail: "📧",
+  mail: "📧",
+  bank: "🏦",
+  wifi: "📶",
+  tiktok: "🎵",
+  youtube: "▶️",
+  default: "🔒"
+};
+
   for (const key in iconMap) {
     if (title.includes(key)) {
       return iconMap[key];
@@ -957,6 +1006,213 @@ window.changeMasterPassword = async () => {
   }
 };
 
+
+//===Mạng xã hội Social netwwork ====//
+function toggleForm() {
+  // ẩn tất cả form
+  formDefault.style.display = "none";
+  formInfo.style.display = "none";
+  socialForm.style.display = "none";
+
+  // hiện đúng form
+  if (type.value === "info") {
+    formInfo.style.display = "block";
+  } 
+  else if (type.value === "social") {
+    socialForm.style.display = "block";
+  } 
+  else {
+    formDefault.style.display = "block";
+  }
+}
+
+function clearForm() {
+  title.value = "";
+  socialUrl.value = "";
+  socialUser.value = "";
+  socialPass.value = "";
+
+  editingId = null;
+}
+
+function renderSocialItem(i) {
+  const div = document.createElement("div");
+  div.className = "item";
+
+  const data = i.data || {};
+
+  div.innerHTML = `
+    🌐 <b>${data.url || ""}</b>
+    <div>${data.username || ""}</div>
+    <div class="pass">******</div>
+  `;
+
+  const passEl = div.querySelector(".pass");
+
+  let show = false;
+
+  // 👁️ show
+  const btnShow = document.createElement("button");
+  btnShow.className = "btn";
+  btnShow.textContent = "👁️";
+
+  btnShow.onclick = () => {
+    show = !show;
+    passEl.textContent = show ? data.password : "******";
+  };
+
+  // 📋 copy
+  const btnCopy = document.createElement("button");
+  btnCopy.className = "btn";
+  btnCopy.textContent = "📋";
+
+  btnCopy.onclick = async () => {
+    await navigator.clipboard.writeText(data.password);
+    btnCopy.textContent = "✔️";
+    setTimeout(() => (btnCopy.textContent = "📋"), 1000);
+  };
+
+  // ✏️ edit
+  const btnEdit = document.createElement("button");
+  btnEdit.className = "btn";
+  btnEdit.textContent = "✏️";
+
+  btnEdit.onclick = () => {
+    editingId = i.id;
+
+    type.value = "social";
+    toggleForm();
+
+    socialUrl.value = data.url || "";
+    socialUser.value = data.username || "";
+    socialPass.value = data.password || "";
+
+    modal.style.display = "flex";
+  };
+
+  // 🗑️ delete
+  const btnDel = document.createElement("button");
+  btnDel.className = "btn";
+  btnDel.textContent = "🗑️";
+
+  btnDel.onclick = async () => {
+    if (confirm("Xóa item này?")) {
+      await deleteVault(user.uid, i.id);
+      await loadData();
+    }
+  };
+
+  const action = document.createElement("div");
+  action.style.marginTop = "8px";
+  action.style.display = "flex";
+  action.style.gap = "6px";
+
+  action.append(btnEdit, btnShow, btnCopy, btnDel);
+
+  div.appendChild(action);
+  list.appendChild(div);
+}
+
+
+window.registerBiometric = async () => {
+  const challenge = new Uint8Array(32);
+  window.crypto.getRandomValues(challenge);
+
+  const cred = await navigator.credentials.create({
+    publicKey: {
+      challenge,
+      rp: { name: "Vault App" },
+      user: {
+        id: new TextEncoder().encode(user.uid),
+        name: user.email,
+        displayName: user.email
+      },
+      pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+      authenticatorSelection: {
+        authenticatorAttachment: "platform",
+        userVerification: "required"
+      },
+      timeout: 60000,
+      attestation: "none"
+    }
+  });
+
+  localStorage.setItem("biometric_enabled", "1");
+
+  showToast("✅ Đã bật Face ID");
+};
+
+
+window.loginBiometric = async () => {
+  if (!localStorage.getItem("biometric_enabled")) {
+    return showToast("Chưa đăng ký Face ID");
+  }
+
+  const challenge = new Uint8Array(32);
+  window.crypto.getRandomValues(challenge);
+
+  try {
+    await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        userVerification: "required",
+        timeout: 60000
+      }
+    });
+
+    // 👉 nếu pass → unlock luôn
+    localStorage.setItem("unlocked", "1");
+    showApp();
+    await loadData();
+
+    showToast("🔓 Mở bằng Face ID");
+
+  } catch {
+    showToast("❌ Face ID fail");
+  }
+};
+
+function smartMatch(text, query) {
+  text = text.toLowerCase();
+  query = query.toLowerCase();
+
+  // exact
+  if (text.includes(query)) return true;
+
+  // gần đúng (facebook -> face)
+  let i = 0;
+  for (let c of text) {
+    if (c === query[i]) i++;
+    if (i === query.length) return true;
+  }
+
+  return false;
+}
+
+
+function buildSearchText(i) {
+  return [
+    i.title,
+    i.username,
+    i.password,
+
+    i.data?.fullName,
+    i.data?.birth,
+    i.data?.tel,
+    i.data?.address,
+    i.data?.email,
+
+    i.data?.site,
+    i.data?.note,
+    i.data?.content,
+
+    i.data?.url
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
 document.querySelectorAll(".menu div").forEach((el) => {
   el.onclick = () => {
     document.querySelectorAll(".menu div").forEach(x => x.classList.remove("active"));
@@ -966,5 +1222,6 @@ document.querySelectorAll(".menu div").forEach((el) => {
     render();
   };
 });
+
 
 

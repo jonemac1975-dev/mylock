@@ -10,7 +10,8 @@ import {
 const config = {
   apiKey: "AIzaSyCYbp4nOHhDbgFN68SW-RdE9M-HGWITFKU",
   authDomain: "saokhueedu.firebaseapp.com",
-  projectId: "saokhueedu"
+  projectId: "saokhueedu",
+storageBucket: "saokhueedu.appspot.com"
 };
 
 const app = initializeApp(config);

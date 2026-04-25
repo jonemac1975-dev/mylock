@@ -15,6 +15,10 @@
 
 <!-- PWA / iOS MODE -->
 <meta name="theme-color" content="#0f172a">
+<!-- chuẩn mới -->
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- giữ lại cho iOS -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="My Lock">
@@ -40,6 +44,7 @@
     <button id="btnUnlock" class="btn-unlock">
       Unlock Vault
     </button>
+<button onclick="loginBiometric()">🔓 Face ID</button>
   </div>
 </div>
 
@@ -54,6 +59,7 @@
       <div data-type="bank">🏦 Bank</div>
       <div data-type="wifi">📶 Wifi</div>
       <div data-type="khac">🔒 Another</div>
+      <div data-type="social">🧠 social network</div>
       <div data-type="info">🧠 Information</div>
     </div>
   </div>
@@ -82,6 +88,7 @@
     <option value="bank">Bank</option>
     <option value="wifi">Wifi</option>
     <option value="khac">Another</option>
+    <option value="social">social network</option>
     <option value="info">Information</option>
   </select>
 
@@ -91,6 +98,14 @@
     <input id="username" placeholder="Username">
     <input id="password" placeholder="Password">
   </div>
+
+<!-- 🔥 FORM mạng xã hội -->
+<div id="form-social">
+  <input id="social_url" placeholder="https://">
+  <input id="social_user" placeholder="Username">
+  <input id="social_pass" placeholder="Password">
+</div>
+
 
   <!-- 🔥 FORM INFO -->
   <div id="form-info" style="display:none">
