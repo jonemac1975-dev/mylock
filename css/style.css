@@ -369,7 +369,7 @@ color:yellow;
 }
 
 .btn {
-  padding: 4px 6px;     /* nhỏ lại */
+  padding: 4px 4px;     /* nhỏ lại */
   font-size: 12px;      /* giảm chữ */
   min-width: 28px;      /* giữ kích thước tối thiểu */
   height: 28px;
