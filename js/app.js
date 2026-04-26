@@ -330,11 +330,13 @@ function collectInfoData() {
   }
 
   if (subType.value === "web") {
-    return {
-      site: document.getElementById("site").value,
-      note: document.getElementById("noteWeb").value
-    };
-  }
+  return {
+    site: document.getElementById("site").value,
+    username: document.getElementById("webUser").value,
+    password: document.getElementById("webPass").value,
+    note: document.getElementById("noteWeb").value
+  };
+}
 
   if (subType.value === "note") {
     return {
@@ -449,28 +451,50 @@ function render() {
       btnEdit.onclick = () => {
   editingId = i.id;
 
+  // 🔥 RESET SẠCH TRƯỚC (QUAN TRỌNG)
+  resetAllForms();
+
   type.value = i.type;
+
+  // 🔥 set UI đúng trước khi fill data
+  toggleForm();
 
   if (i.type === "info") {
     subType.value = i.subType;
     renderSubTypeUI();
-    
-    title.value =
-      i.data.fullName ||
-      i.data.site ||
-      "";
 
-    username.value =
-      i.data.tel || "";
+    // ===== WEB =====
+    if (i.subType === "web") {
+      document.getElementById("site").value = i.data.site || "";
+      document.getElementById("webUser").value = i.data.username || "";
+      document.getElementById("webPass").value = i.data.password || "";
+      document.getElementById("noteWeb").value = i.data.note || "";
+    }
 
-    password.value =
-      i.data.note ||
-      i.data.content ||
-      "";
+    // ===== PERSONAL =====
+    if (i.subType === "personal") {
+      document.getElementById("fullName").value = i.data.fullName || "";
+      document.getElementById("birth").value = i.data.birth || "";
+      document.getElementById("tel").value = i.data.tel || "";
+      document.getElementById("address").value = i.data.address || "";
+      document.getElementById("email").value = i.data.email || "";
+      document.getElementById("note").value = i.data.note || "";
+    }
+
+    // ===== NOTE =====
+    if (i.subType === "note") {
+      document.getElementById("date").value = i.data.date || "";
+      document.getElementById("content").value = i.data.content || "";
+    }
+
+  } else if (i.type === "social") {
+    socialUrl.value = i.data.url || "";
+    socialUser.value = i.data.username || "";
+    socialPass.value = i.data.password || "";
   } else {
-    title.value = i.title;
-    username.value = i.username;
-    password.value = i.password;
+    title.value = i.title || "";
+    username.value = i.username || "";
+    password.value = i.password || "";
   }
 
   modal.style.display = "flex";
@@ -515,7 +539,7 @@ function render() {
       action.style.marginTop = "8px";
       action.style.display = "flex";
       action.style.gap = "6px";
-
+action.style.flexWrap = "nowrap";
       action.appendChild(btnEdit);
       action.appendChild(btnShow);
       action.appendChild(btnCopy);
@@ -542,11 +566,43 @@ function renderInfoItem(i) {
   }
 
   if (i.subType === "web") {
-    div.innerHTML = `
-      🌐 ${i.data.site || ""}
-      <div>${i.data.note || ""}</div>
-    `;
-  }
+  div.innerHTML = `
+    🌐 ${i.data.site || ""}
+    <div>${i.data.username || ""}</div>
+    <div class="pass">******</div>
+    <div>${i.data.note || ""}</div>
+  `;
+
+  const passEl = div.querySelector(".pass");
+  let show = false;
+
+  const btnShow = document.createElement("button");
+  btnShow.className = "btn";
+  btnShow.textContent = "👁️";
+
+  btnShow.onclick = () => {
+    show = !show;
+    passEl.textContent = show ? i.data.password : "******";
+  };
+
+  const btnCopy = document.createElement("button");
+  btnCopy.className = "btn";
+  btnCopy.textContent = "📋";
+
+  btnCopy.onclick = async () => {
+    await navigator.clipboard.writeText(i.data.password || "");
+    btnCopy.textContent = "✔️";
+    setTimeout(() => (btnCopy.textContent = "📋"), 1000);
+  };
+
+  const actionExtra = document.createElement("div");
+  actionExtra.style.display = "flex";
+  actionExtra.style.gap = "6px";
+  actionExtra.style.marginTop = "6px";
+
+  actionExtra.append(btnShow, btnCopy);
+  div.appendChild(actionExtra);
+}
 
   if (i.subType === "note") {
     div.innerHTML = `
@@ -560,56 +616,53 @@ function renderInfoItem(i) {
   action.style.marginTop = "8px";
   action.style.display = "flex";
   action.style.gap = "6px";
-
+action.style.flexWrap = "nowrap";
   // ✏️ EDIT
   const btnEdit = document.createElement("button");
   btnEdit.className = "btn";
   btnEdit.textContent = "✏️";
 
   btnEdit.onclick = () => {
-    editingId = i.id;
+  editingId = i.id;
+ clearForm(); // 🔥 reset sạch trước
 
-    type.value = "info";
-    formDefault.style.display = "none";
-    formInfo.style.display = "block";
+  type.value = "info";
 
-    subType.value = i.subType;
-    renderSubTypeUI();
+  // 🔥 FIX CHÍNH Ở ĐÂY
+  formDefault.style.display = "none";
+  formInfo.style.display = "block";
 
-    // fill data
-    if (i.subType === "personal") {
-      document.getElementById("fullName").value = i.data.fullName || "";
-      document.getElementById("birth").value = i.data.birth || "";
-      document.getElementById("tel").value = i.data.tel || "";
-      document.getElementById("address").value = i.data.address || "";
-      document.getElementById("email").value = i.data.email || "";
-      document.getElementById("note").value = i.data.note || "";
-    }
+  subType.value = i.subType;
+  renderSubTypeUI();
 
-    if (i.subType === "web") {
-      document.getElementById("site").value = i.data.site || "";
-      document.getElementById("noteWeb").value = i.data.note || "";
-    }
+  // ===== WEB =====
+  if (i.subType === "web") {
+    document.getElementById("site").value = i.data.site || "";
+    document.getElementById("webUser").value = i.data.username || "";
+    document.getElementById("webPass").value = i.data.password || "";
+    document.getElementById("noteWeb").value = i.data.note || "";
+  }
 
-    if (i.subType === "note") {
-      document.getElementById("date").value = i.data.date || "";
-      document.getElementById("content").value = i.data.content || "";
-    }
+  // ===== PERSONAL =====
+  if (i.subType === "personal") {
+    document.getElementById("fullName").value = i.data.fullName || "";
+    document.getElementById("birth").value = i.data.birth || "";
+    document.getElementById("tel").value = i.data.tel || "";
+    document.getElementById("address").value = i.data.address || "";
+    document.getElementById("email").value = i.data.email || "";
+    document.getElementById("note").value = i.data.note || "";
+  }
 
-    modal.style.display = "flex";
-  };
+  // ===== NOTE =====
+  if (i.subType === "note") {
+    document.getElementById("date").value = i.data.date || "";
+    document.getElementById("content").value = i.data.content || "";
+  }
 
-  // 👁️ VIEW (chỉ mở modal, disable input)
-  const btnView = document.createElement("button");
-  btnView.className = "btn";
-  btnView.textContent = "👁️";
+  modal.style.display = "flex";
+};
 
-  btnView.onclick = () => {
-    btnEdit.onclick(); // reuse edit
-
-    // disable input
-    document.querySelectorAll("#form-info input").forEach(i => i.disabled = true);
-  };
+ 
 
   // 🗑️ DELETE
   const btnDel = document.createElement("button");
@@ -624,11 +677,8 @@ function renderInfoItem(i) {
   };
 
   action.appendChild(btnEdit);
-  action.appendChild(btnView);
   action.appendChild(btnDel);
-
   div.appendChild(action);
-
   list.appendChild(div);
 }
 
@@ -920,12 +970,33 @@ const iconMap = {
 
 
 function renderSubTypeUI() {
-  // reset tất cả
+  // 🔥 Ẩn hết
   infoPersonal.style.display = "none";
   infoWeb.style.display = "none";
   infoNote.style.display = "none";
 
-  // show đúng cái cần
+  // 🔥 CLEAR dữ liệu (QUAN TRỌNG)
+  const clear = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  };
+
+  clear("site");
+  clear("webUser");
+  clear("webPass");
+  clear("noteWeb");
+
+  clear("fullName");
+  clear("birth");
+  clear("tel");
+  clear("address");
+  clear("email");
+  clear("note");
+
+  clear("date");
+  clear("content");
+
+  // 🔥 SHOW đúng form
   if (subType.value === "personal") {
     infoPersonal.style.display = "block";
   }
@@ -1027,11 +1098,48 @@ function toggleForm() {
 }
 
 function clearForm() {
+
   title.value = "";
   socialUrl.value = "";
   socialUser.value = "";
   socialPass.value = "";
 
+
+  // ===== DEFAULT =====
+  title.value = "";
+  username.value = "";
+  password.value = "";
+
+  // ===== SOCIAL =====
+  if (socialUrl) socialUrl.value = "";
+  if (socialUser) socialUser.value = "";
+  if (socialPass) socialPass.value = "";
+
+  // ===== INFO - PERSONAL =====
+  const setVal = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  };
+
+  setVal("fullName");
+  setVal("birth");
+  setVal("tel");
+  setVal("address");
+  setVal("email");
+  setVal("note");
+
+  // ===== INFO - WEB =====
+  setVal("site");
+  setVal("webUser");
+  setVal("webPass");
+  setVal("noteWeb");
+
+  // ===== INFO - NOTE =====
+  setVal("date");
+  setVal("content");
+
+  // reset state
+>>>>>>> 6cfb4c2 (update)
   editingId = null;
 }
 
@@ -1080,6 +1188,10 @@ function renderSocialItem(i) {
   btnEdit.onclick = () => {
     editingId = i.id;
 
+
+
+clearForm(); // 🔥 reset sạch trước
+
     type.value = "social";
     toggleForm();
 
@@ -1112,6 +1224,7 @@ function renderSocialItem(i) {
   div.appendChild(action);
   list.appendChild(div);
 }
+
 
 
 
@@ -1224,6 +1337,33 @@ function buildSearchText(i) {
     .join(" ")
     .toLowerCase();
 }
+=======
+function resetAllForms() {
+  // ===== DEFAULT =====
+  title.value = "";
+  username.value = "";
+  password.value = "";
+
+  // ===== SOCIAL =====
+  if (socialUrl) socialUrl.value = "";
+  if (socialUser) socialUser.value = "";
+  if (socialPass) socialPass.value = "";
+
+  // ===== INFO =====
+  const ids = [
+    "fullName","birth","tel","address","email","note",
+    "site","webUser","webPass","noteWeb",
+    "date","content"
+  ];
+
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+}
+
+
+>>>>>>> 6cfb4c2 (update)
 
 document.querySelectorAll(".menu div").forEach((el) => {
   el.onclick = () => {
