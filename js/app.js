@@ -1139,7 +1139,7 @@ function clearForm() {
   setVal("content");
 
   // reset state
->>>>>>> 6cfb4c2 (update)
+
   editingId = null;
 }
 
@@ -1337,7 +1337,7 @@ function buildSearchText(i) {
     .join(" ")
     .toLowerCase();
 }
-=======
+
 function resetAllForms() {
   // ===== DEFAULT =====
   title.value = "";
@@ -1363,7 +1363,7 @@ function resetAllForms() {
 }
 
 
->>>>>>> 6cfb4c2 (update)
+
 
 document.querySelectorAll(".menu div").forEach((el) => {
   el.onclick = () => {
