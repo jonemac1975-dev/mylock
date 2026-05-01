@@ -446,6 +446,7 @@ function render() {
       // ================= BUTTON EDIT =================
       const btnEdit = document.createElement("button");
       btnEdit.className = "btn";
+      btnEdit.classList.add("edit");
       btnEdit.textContent = "✏️";
 
       btnEdit.onclick = () => {
@@ -503,6 +504,7 @@ function render() {
       // ================= BUTTON SHOW =================
       const btnShow = document.createElement("button");
       btnShow.className = "btn";
+      btnShow.classList.add("view");
       btnShow.textContent = "👁️";
 
       btnShow.onclick = () => {
@@ -513,6 +515,7 @@ function render() {
       // ================= BUTTON COPY =================
       const btnCopy = document.createElement("button");
       btnCopy.className = "btn";
+      btnCopy.classList.add("copy");
       btnCopy.textContent = "📋";
 
       btnCopy.onclick = async () => {
@@ -525,6 +528,7 @@ function render() {
       // ================= BUTTON DELETE =================
       const btnDel = document.createElement("button");
       btnDel.className = "btn";
+     btnDel.classList.add("delete");
       btnDel.textContent = "🗑️";
 
       btnDel.onclick = async () => {
@@ -577,7 +581,7 @@ function renderInfoItem(i) {
   let show = false;
 
   const btnShow = document.createElement("button");
-  btnShow.className = "btn";
+  btnShow.className = "btn view";
   btnShow.textContent = "👁️";
 
   btnShow.onclick = () => {
@@ -586,7 +590,7 @@ function renderInfoItem(i) {
   };
 
   const btnCopy = document.createElement("button");
-  btnCopy.className = "btn";
+  btnCopy.className = "btn copy";
   btnCopy.textContent = "📋";
 
   btnCopy.onclick = async () => {
@@ -619,7 +623,7 @@ function renderInfoItem(i) {
 action.style.flexWrap = "nowrap";
   // ✏️ EDIT
   const btnEdit = document.createElement("button");
-  btnEdit.className = "btn";
+  btnEdit.className = "btn edit";
   btnEdit.textContent = "✏️";
 
   btnEdit.onclick = () => {
@@ -666,7 +670,7 @@ action.style.flexWrap = "nowrap";
 
   // 🗑️ DELETE
   const btnDel = document.createElement("button");
-  btnDel.className = "btn";
+  btnDel.className = "btn delete";
   btnDel.textContent = "🗑️";
 
   btnDel.onclick = async () => {
@@ -690,6 +694,7 @@ btnNew.onclick = () => {
   // ===== RESET TYPE =====
   type.value = "mail";
   subType.value = "personal";
+toggleForm();
 
   // ===== RESET FORM DEFAULT =====
   title.value = "";
@@ -1161,7 +1166,7 @@ function renderSocialItem(i) {
 
   // 👁️ show
   const btnShow = document.createElement("button");
-  btnShow.className = "btn";
+  btnShow.className = "btn view";
   btnShow.textContent = "👁️";
 
   btnShow.onclick = () => {
@@ -1171,7 +1176,7 @@ function renderSocialItem(i) {
 
   // 📋 copy
   const btnCopy = document.createElement("button");
-  btnCopy.className = "btn";
+  btnCopy.className = "btn copy";
   btnCopy.textContent = "📋";
 
   btnCopy.onclick = async () => {
@@ -1204,7 +1209,7 @@ clearForm(); // 🔥 reset sạch trước
 
   // 🗑️ delete
   const btnDel = document.createElement("button");
-  btnDel.className = "btn";
+  btnDel.className = "btn delete";
   btnDel.textContent = "🗑️";
 
   btnDel.onclick = async () => {

@@ -64,15 +64,6 @@ body{
   border-radius:10px;
 }
 
-.btn{
-  background:white;
-  border:none;
-  color:#fff;
-  padding:5px;
-  margin:2px;
-  border-radius:6px;
-  cursor:pointer;
-}
 
 .modal{
   position:fixed;
@@ -359,11 +350,11 @@ color:yellow;
   }
 
   .sidebar {
-    width: 35%;
+    width: 40%;
   }
 
   .main {
-    width: 65%;
+    width: 60%;
   }
 
 }
@@ -376,3 +367,38 @@ color:yellow;
   border-radius: 6px;
 }
 
+
+
+
+/* ===== BUTTON BASE (QUAN TRỌNG NHẤT) ===== */
+.btn{
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #e2e8f0;
+
+  padding: 4px;
+  min-width: 28px;
+  height: 28px;
+
+  border-radius: 6px;
+  cursor: pointer;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  transition: all 0.2s ease;
+}
+
+/* ===== HOVER CHUNG ===== */
+.btn:hover{
+  transform: translateY(-1px);
+}
+
+/* ===== MÀU THEO CHỨC NĂNG ===== */
+
+
+.btn.edit:hover{ background:#3b82f6 !important; }
+.btn.view:hover{ background:#22c55e !important; }
+.btn.copy:hover{ background:#eab308 !important; color:#000 !important; }
+.btn.delete:hover{ background:#ef4444 !important; }
