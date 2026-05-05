@@ -402,3 +402,14 @@ color:yellow;
 .btn.view:hover{ background:#22c55e !important; }
 .btn.copy:hover{ background:#eab308 !important; color:#000 !important; }
 .btn.delete:hover{ background:#ef4444 !important; }
+
+.count {
+  opacity: 0.6;
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+.menu .active .count {
+  font-weight: 600;
+  opacity: 1;
+}

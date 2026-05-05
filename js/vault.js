@@ -1,5 +1,5 @@
 import { db } from "./firebase.js";
-import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, addDoc, getDocs,setDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { encrypt, decrypt } from "./crypto.js";
 
 export async function loadVault(uid) {
@@ -16,28 +16,43 @@ export async function loadVault(uid) {
   }));
 }
 
-export async function saveVault(uid, item) {
-  const { collection, addDoc } = await import(
-    "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
-  );
+export async function saveVault(uid, item, id = null) {
   const { db } = await import("./firebase.js");
 
-  // 🔥 CASE VERIFY (KHÔNG stringify nữa)
+  const colRef = collection(db, "users", uid, "vault");
+
+  // 🔥 CASE VERIFY
   if (item.type === "verify") {
-    await addDoc(collection(db, "users", uid, "vault"), {
-      type: "verify",
-      data: item.data
-    });
+    if (id) {
+      await setDoc(doc(db, "users", uid, "vault", id), {
+        type: "verify",
+        data: item.data
+      });
+    } else {
+      await addDoc(colRef, {
+        type: "verify",
+        data: item.data
+      });
+    }
     return;
   }
 
-  // 🔥 CASE NORMAL
+  // 🔐 encrypt
   const encrypted = await encrypt(JSON.stringify(item));
 
-  await addDoc(collection(db, "users", uid, "vault"), {
+  const payload = {
     type: item.type,
     data: encrypted
-  });
+  };
+
+  // 🔥 KEY FIX Ở ĐÂY
+  if (id) {
+    // 👉 UPDATE (KHÔNG tạo mới)
+    await setDoc(doc(db, "users", uid, "vault", id), payload);
+  } else {
+    // 👉 CREATE
+    await addDoc(colRef, payload);
+  }
 }
 
 export async function deleteVault(uid,id){

@@ -217,6 +217,44 @@ function showApp() {
   appBox.style.display = "flex";
 }
 
+
+/*===========gom hàm copy============*/
+function duplicateItem(i) {
+  const clone = JSON.parse(JSON.stringify(i));
+
+  // 🔥 đảm bảo tạo mới
+  editingId = null;
+
+  // reset form
+  resetAllForms();
+
+  type.value = clone.type;
+  toggleForm();
+
+  if (clone.type === "info") {
+    subType.value = clone.subType;
+    renderSubTypeUI();
+
+    Object.keys(clone.data || {}).forEach(key => {
+      const el = document.getElementById(key);
+      if (el) el.value = clone.data[key];
+    });
+
+  } else if (clone.type === "social") {
+    socialUrl.value = clone.data.url || "";
+    socialUser.value = clone.data.username || "";
+    socialPass.value = clone.data.password || "";
+
+  } else {
+    title.value = clone.title || "";
+    username.value = clone.username || "";
+    password.value = clone.password || "";
+  }
+
+  modal.style.display = "flex";
+  showToast("📋 Nhân bản, sửa rồi lưu để tạo mới");
+}
+
 /* ================= DATA ================= */
 
 async function loadData() {
@@ -255,6 +293,7 @@ async function loadData() {
 
     // 🔥 render (không cần setTimeout nữa)
     render();
+updateMenuCount();
 
   } catch (err) {
 
@@ -272,7 +311,7 @@ btnSave.onclick = async () => {
 
   let item;
 
-  // ===== SOCIAL =====
+  // ===== BUILD DATA =====
   if (type.value === "social") {
     item = {
       type: "social",
@@ -282,18 +321,14 @@ btnSave.onclick = async () => {
         password: socialPass.value
       }
     };
-  }
-
-  // ===== INFO =====
+  } 
   else if (type.value === "info") {
     item = {
       type: "info",
       subType: subType.value,
       data: collectInfoData()
     };
-  }
-
-  // ===== DEFAULT =====
+  } 
   else {
     item = {
       type: type.value,
@@ -303,13 +338,18 @@ btnSave.onclick = async () => {
     };
   }
 
-  // ===== UPDATE =====
-  if (editingId) {
-    await deleteVault(user.uid, editingId);
-    editingId = null;
-  }
+  // 🔥 CHECK TRÙNG (đặt ở đây)
+  if (isDuplicateItem(item)) {
+  if (!confirm("⚠️ Đã tồn tại, vẫn lưu?")) return;
+}
 
-  await saveVault(user.uid, item);
+  // ===== SAVE =====
+  if (editingId) {
+    await saveVault(user.uid, item, editingId);
+    editingId = null;
+  } else {
+    await saveVault(user.uid, item);
+  }
 
   autoBackup();
   closeModal();
@@ -518,12 +558,7 @@ function render() {
       btnCopy.classList.add("copy");
       btnCopy.textContent = "📋";
 
-      btnCopy.onclick = async () => {
-        await navigator.clipboard.writeText(i.password);
-
-        btnCopy.textContent = "✔️";
-        setTimeout(() => (btnCopy.textContent = "📋"), 1000);
-      };
+      btnCopy.onclick = () => duplicateItem(i);
 
       // ================= BUTTON DELETE =================
       const btnDel = document.createElement("button");
@@ -593,11 +628,7 @@ function renderInfoItem(i) {
   btnCopy.className = "btn copy";
   btnCopy.textContent = "📋";
 
-  btnCopy.onclick = async () => {
-    await navigator.clipboard.writeText(i.data.password || "");
-    btnCopy.textContent = "✔️";
-    setTimeout(() => (btnCopy.textContent = "📋"), 1000);
-  };
+  btnCopy.onclick = () => duplicateItem(i);
 
   const actionExtra = document.createElement("div");
   actionExtra.style.display = "flex";
@@ -627,8 +658,9 @@ action.style.flexWrap = "nowrap";
   btnEdit.textContent = "✏️";
 
   btnEdit.onclick = () => {
+clearForm(); // 🔥 reset sạch trước
   editingId = i.id;
- clearForm(); // 🔥 reset sạch trước
+ 
 
   type.value = "info";
 
@@ -1145,7 +1177,7 @@ function clearForm() {
 
   // reset state
 
-  editingId = null;
+//  editingId = null;
 }
 
 function renderSocialItem(i) {
@@ -1179,11 +1211,7 @@ function renderSocialItem(i) {
   btnCopy.className = "btn copy";
   btnCopy.textContent = "📋";
 
-  btnCopy.onclick = async () => {
-    await navigator.clipboard.writeText(data.password);
-    btnCopy.textContent = "✔️";
-    setTimeout(() => (btnCopy.textContent = "📋"), 1000);
-  };
+  btnCopy.onclick = () => duplicateItem(i);
 
   // ✏️ edit
   const btnEdit = document.createElement("button");
@@ -1368,6 +1396,80 @@ function resetAllForms() {
 }
 
 
+function isDuplicateItem(newItem) {
+  return data.some(i => {
+
+    // ❌ bỏ qua chính nó khi edit
+    if (i.id === editingId) return false;
+
+    // ===== DEFAULT =====
+    if (newItem.type !== "info" && newItem.type !== "social") {
+      return (
+        i.type === newItem.type &&
+        (i.title || "").toLowerCase().trim() === (newItem.title || "").toLowerCase().trim() &&
+        (i.username || "").toLowerCase().trim() === (newItem.username || "").toLowerCase().trim()
+      );
+    }
+
+    // ===== SOCIAL =====
+    if (newItem.type === "social") {
+      return (
+        i.type === "social" &&
+        (i.data?.url || "").toLowerCase().trim() === (newItem.data?.url || "").toLowerCase().trim() &&
+        (i.data?.username || "").toLowerCase().trim() === (newItem.data?.username || "").toLowerCase().trim()
+      );
+    }
+
+    // ===== INFO =====
+    if (newItem.type === "info") {
+
+      // WEB
+      if (newItem.subType === "web") {
+        return (
+          i.type === "info" &&
+          i.subType === "web" &&
+          (i.data?.site || "").toLowerCase().trim() === (newItem.data?.site || "").toLowerCase().trim() &&
+          (i.data?.username || "").toLowerCase().trim() === (newItem.data?.username || "").toLowerCase().trim()
+        );
+      }
+
+      // PERSONAL
+      if (newItem.subType === "personal") {
+        return (
+          i.type === "info" &&
+          i.subType === "personal" &&
+          (i.data?.fullName || "").toLowerCase().trim() === (newItem.data?.fullName || "").toLowerCase().trim() &&
+          (i.data?.tel || "").toLowerCase().trim() === (newItem.data?.tel || "").toLowerCase().trim()
+        );
+      }
+    }
+
+    return false;
+  });
+}
+
+
+function updateMenuCount() {
+  const counts = {};
+
+  // đếm
+  data.forEach(i => {
+    counts[i.type] = (counts[i.type] || 0) + 1;
+  });
+
+  // gán UI
+  Object.keys(counts).forEach(type => {
+    const el = document.getElementById(`count-${type}`);
+    if (el) {
+      el.textContent = `(${counts[type]})`;
+    }
+  });
+
+  // reset về 0 nếu không có
+  document.querySelectorAll(".count").forEach(el => {
+    if (!el.textContent) el.textContent = "(0)";
+  });
+}
 
 
 document.querySelectorAll(".menu div").forEach((el) => {
