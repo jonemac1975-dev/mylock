@@ -365,8 +365,17 @@ function collectInfoData() {
       tel: document.getElementById("tel").value,
       address: document.getElementById("address").value,
       email: document.getElementById("email").value,
-      note: document.getElementById("note").value
-    };
+      note: document.getElementById("note").value,
+     zalo: document.getElementById("zalo").value,
+     facebook: document.getElementById("facebook").value,
+     messenger: document.getElementById("messenger").value,
+  // 🔥 NEW
+ avatar: currentAvatar || "",
+  tags: document.getElementById("tags")?.value || "",
+  company: document.getElementById("company")?.value || "",
+  jobTitle: document.getElementById("jobTitle")?.value || "",
+  favorite: document.getElementById("favorite")?.checked || false
+};
   }
 
   if (subType.value === "web") {
@@ -519,7 +528,11 @@ function render() {
       document.getElementById("tel").value = i.data.tel || "";
       document.getElementById("address").value = i.data.address || "";
       document.getElementById("email").value = i.data.email || "";
+document.getElementById("zalo").value = i.data.zalo || "";
+document.getElementById("facebook").value = i.data.facebook || "";
+document.getElementById("messenger").value = i.data.messenger || "";
       document.getElementById("note").value = i.data.note || "";
+
     }
 
     // ===== NOTE =====
@@ -595,54 +608,78 @@ function renderInfoItem(i) {
   const div = document.createElement("div");
   div.className = "item";
 
-  // ===== CONTENT =====
+  const d = i.data || {}; // 🔥 dùng chung toàn hàm
+
+  let btnView = null;
+
+  // ===== PERSONAL =====
   if (i.subType === "personal") {
     div.innerHTML = `
-      👤 <b>${i.data.fullName || ""}</b>
-      <div>${i.data.tel || ""}</div>
-      <div>${i.data.note || ""}</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <img src="${d.avatar || 'https://via.placeholder.com/40'}"
+             style="width:40px;height:40px;border-radius:50%">
+
+        <div style="flex:1">
+          <div style="font-weight:600">
+            ${d.fullName || ""}
+            ${d.favorite ? "⭐" : ""}
+          </div>
+          <div style="font-size:12px;opacity:0.7">
+            ${d.tel || ""}
+          </div>
+          <div style="font-size:12px;opacity:0.6">
+            ${d.company || ""} ${d.jobTitle ? "- " + d.jobTitle : ""}
+          </div>
+        </div>
+      </div>
     `;
+
+    // 👁️ VIEW
+    btnView = document.createElement("button");
+    btnView.className = "btn view";
+    btnView.textContent = "👁️";
+    btnView.onclick = () => showPersonalDetail(i);
   }
 
+  // ===== WEB =====
   if (i.subType === "web") {
-  div.innerHTML = `
-    🌐 ${i.data.site || ""}
-    <div>${i.data.username || ""}</div>
-    <div class="pass">******</div>
-    <div>${i.data.note || ""}</div>
-  `;
+    div.innerHTML = `
+      🌐 ${d.site || ""}
+      <div>${d.username || ""}</div>
+      <div class="pass">******</div>
+      <div>${d.note || ""}</div>
+    `;
 
-  const passEl = div.querySelector(".pass");
-  let show = false;
+    const passEl = div.querySelector(".pass");
+    let show = false;
 
-  const btnShow = document.createElement("button");
-  btnShow.className = "btn view";
-  btnShow.textContent = "👁️";
+    const btnShow = document.createElement("button");
+    btnShow.className = "btn view";
+    btnShow.textContent = "👁️";
+    btnShow.onclick = () => {
+      show = !show;
+      passEl.textContent = show ? d.password : "******";
+    };
 
-  btnShow.onclick = () => {
-    show = !show;
-    passEl.textContent = show ? i.data.password : "******";
-  };
+    const btnCopy = document.createElement("button");
+    btnCopy.className = "btn copy";
+    btnCopy.textContent = "📋";
+    btnCopy.onclick = () => duplicateItem(i);
 
-  const btnCopy = document.createElement("button");
-  btnCopy.className = "btn copy";
-  btnCopy.textContent = "📋";
+    const actionExtra = document.createElement("div");
+    actionExtra.style.display = "flex";
+    actionExtra.style.gap = "6px";
+    actionExtra.style.marginTop = "6px";
 
-  btnCopy.onclick = () => duplicateItem(i);
+    actionExtra.append(btnShow, btnCopy);
+    div.appendChild(actionExtra);
+  }
 
-  const actionExtra = document.createElement("div");
-  actionExtra.style.display = "flex";
-  actionExtra.style.gap = "6px";
-  actionExtra.style.marginTop = "6px";
-
-  actionExtra.append(btnShow, btnCopy);
-  div.appendChild(actionExtra);
-}
-
+  // ===== NOTE =====
   if (i.subType === "note") {
     div.innerHTML = `
-      📝 ${i.data.date || ""}
-      <div>${i.data.content || ""}</div>
+      📝 ${d.date || ""}
+      <div>${d.content || ""}</div>
     `;
   }
 
@@ -651,54 +688,89 @@ function renderInfoItem(i) {
   action.style.marginTop = "8px";
   action.style.display = "flex";
   action.style.gap = "6px";
-action.style.flexWrap = "nowrap";
+
+  // 📞 CALL
+  const btnCall = document.createElement("a");
+  btnCall.href = d.tel ? `tel:${d.tel}` : "#";
+  btnCall.className = "btn";
+  btnCall.textContent = "📞";
+
+  // 💬 ZALO
+  const btnZalo = document.createElement("a");
+  btnZalo.href = d.zalo ? `https://zalo.me/${d.zalo}` : "#";
+  btnZalo.target = "_blank";
+  btnZalo.className = "btn";
+  btnZalo.textContent = "💬";
+
+  // 📘 FACEBOOK
+  const btnFb = document.createElement("a");
+  btnFb.href = d.facebook || "#";
+  btnFb.target = "_blank";
+  btnFb.className = "btn";
+  btnFb.textContent = "📘";
+
   // ✏️ EDIT
   const btnEdit = document.createElement("button");
   btnEdit.className = "btn edit";
   btnEdit.textContent = "✏️";
 
   btnEdit.onclick = () => {
-clearForm(); // 🔥 reset sạch trước
-  editingId = i.id;
- 
+    clearForm();
+    editingId = i.id;
 
-  type.value = "info";
+    type.value = "info";
+    formDefault.style.display = "none";
+    formInfo.style.display = "block";
 
-  // 🔥 FIX CHÍNH Ở ĐÂY
-  formDefault.style.display = "none";
-  formInfo.style.display = "block";
+    subType.value = i.subType;
+    renderSubTypeUI();
 
-  subType.value = i.subType;
-  renderSubTypeUI();
+    if (i.subType === "personal") {
+  const d = i.data || {};
 
-  // ===== WEB =====
-  if (i.subType === "web") {
-    document.getElementById("site").value = i.data.site || "";
-    document.getElementById("webUser").value = i.data.username || "";
-    document.getElementById("webPass").value = i.data.password || "";
-    document.getElementById("noteWeb").value = i.data.note || "";
+  document.getElementById("fullName").value = d.fullName || "";
+  document.getElementById("birth").value = d.birth || "";
+  document.getElementById("tel").value = d.tel || "";
+  document.getElementById("address").value = d.address || "";
+  document.getElementById("email").value = d.email || "";
+  document.getElementById("note").value = d.note || "";
+
+  // 🔥 NEW FIELDS
+  document.getElementById("company").value = d.company || "";
+  document.getElementById("jobTitle").value = d.jobTitle || "";
+  document.getElementById("tags").value = d.tags || "";
+
+  const favEl = document.getElementById("favorite");
+  if (favEl) favEl.checked = d.favorite || false;
+
+  document.getElementById("zalo").value = d.zalo || "";
+  document.getElementById("facebook").value = d.facebook || "";
+  document.getElementById("messenger").value = d.messenger || "";
+
+  // 🔥 AVATAR
+  const preview = document.getElementById("avatarPreview");
+  if (preview) {
+    preview.src = d.avatar || "https://via.placeholder.com/80";
   }
 
-  // ===== PERSONAL =====
-  if (i.subType === "personal") {
-    document.getElementById("fullName").value = i.data.fullName || "";
-    document.getElementById("birth").value = i.data.birth || "";
-    document.getElementById("tel").value = i.data.tel || "";
-    document.getElementById("address").value = i.data.address || "";
-    document.getElementById("email").value = i.data.email || "";
-    document.getElementById("note").value = i.data.note || "";
-  }
+  // 🔥 QUAN TRỌNG: giữ lại avatar để save không bị mất
+  window.currentAvatar = d.avatar || "";
+}
 
-  // ===== NOTE =====
-  if (i.subType === "note") {
-    document.getElementById("date").value = i.data.date || "";
-    document.getElementById("content").value = i.data.content || "";
-  }
+    if (i.subType === "web") {
+      document.getElementById("site").value = d.site || "";
+      document.getElementById("webUser").value = d.username || "";
+      document.getElementById("webPass").value = d.password || "";
+      document.getElementById("noteWeb").value = d.note || "";
+    }
 
-  modal.style.display = "flex";
-};
+    if (i.subType === "note") {
+      document.getElementById("date").value = d.date || "";
+      document.getElementById("content").value = d.content || "";
+    }
 
- 
+    modal.style.display = "flex";
+  };
 
   // 🗑️ DELETE
   const btnDel = document.createElement("button");
@@ -712,11 +784,18 @@ clearForm(); // 🔥 reset sạch trước
     }
   };
 
-  action.appendChild(btnEdit);
-  action.appendChild(btnDel);
+  // ===== APPEND =====
+  action.append(btnCall, btnZalo, btnFb);
+
+  if (btnView) action.appendChild(btnView);
+
+  action.append(btnEdit, btnDel);
+
   div.appendChild(action);
   list.appendChild(div);
 }
+
+
 
 /* ================= MODAL ================= */
 
@@ -1472,6 +1551,45 @@ function updateMenuCount() {
 }
 
 
+function showPersonalDetail(i) {
+  const d = i.data || {};
+  const html = `
+    <div class="modal-detail">
+      <div style="text-align:center">
+        <img src="${d.avatar || 'https://via.placeholder.com/80'}"
+             style="width:80px;height:80px;border-radius:50%">
+      </div>
+      <h3 style="text-align:center">
+        ${d.fullName || ""}
+        ${d.favorite ? "⭐" : ""}
+      </h3>
+      <p>💼 ${d.company || ""} ${d.jobTitle ? "- " + d.jobTitle : ""}</p>
+      <p>📞 <a href="tel:${d.tel || ""}">${d.tel || ""}</a></p>
+      <p>📧 ${d.email || ""}</p>
+      <p>📍 ${d.address || ""}</p>
+      <p>🎂 ${d.birth || ""}</p>
+      ${d.zalo ? `<p>💬 <a href="https://zalo.me/${d.zalo}" target="_blank">Zalo</a></p>` : ""}
+      ${d.facebook ? `<p>📘 <a href="${d.facebook}" target="_blank">Facebook</a></p>` : ""}
+      ${d.messenger ? `<p>💬 <a href="${d.messenger}" target="_blank">Messenger</a></p>` : ""}
+      ${d.tags ? `<p>🏷️ ${d.tags}</p>` : ""}
+      <p>📝 ${d.note || ""}</p>
+      <button onclick="closeDetail()">Đóng</button>
+    </div>
+  `;
+  const wrapper = document.createElement("div");
+  wrapper.id = "detailPopup";
+  wrapper.innerHTML = html;
+  document.body.appendChild(wrapper);
+}
+
+
+
+
+window.closeDetail = function () {
+  document.getElementById("detailPopup")?.remove();
+};
+
+
 document.querySelectorAll(".menu div").forEach((el) => {
   el.onclick = () => {
     document.querySelectorAll(".menu div").forEach(x => x.classList.remove("active"));
@@ -1484,3 +1602,53 @@ document.querySelectorAll(".menu div").forEach((el) => {
 
 
 
+
+let currentAvatar = "";
+
+document.getElementById("avatarInput").onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.src = ev.target.result;
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      const maxSize = 200;
+      let w = img.width;
+      let h = img.height;
+
+      if (w > h) {
+        if (w > maxSize) {
+          h *= maxSize / w;
+          w = maxSize;
+        }
+      } else {
+        if (h > maxSize) {
+          w *= maxSize / h;
+          h = maxSize;
+        }
+      }
+
+      canvas.width = w;
+      canvas.height = h;
+
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const base64 = canvas.toDataURL("image/jpeg", 0.7);
+
+      // 👉 preview
+      document.getElementById("avatarPreview").src = base64;
+
+      // 👉 lưu để save
+      currentAvatar = base64;
+    };
+  };
+
+  reader.readAsDataURL(file);
+};

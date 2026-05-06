@@ -74,7 +74,7 @@
 </div>
 
 <!-- MODAL -->
-<div id="modal" class="modal">
+<div id="modal" style="display:none;">
   <div class="modal-content">
 
   <select id="type">
@@ -114,12 +114,25 @@
 
     <!-- PERSONAL -->
     <div id="info-personal">
-      <input id="fullName" placeholder="Full name">
+<input type="file" id="avatarInput" accept="image/*">
+<img id="avatarPreview"
+     src="https://via.placeholder.com/80"
+     style="width:80px;height:80px;border-radius:50%;display:block;margin-top:10px;">   
+<input id="fullName" placeholder="Full name">
       <input id="birth" type="date">
       <input id="tel" placeholder="Tel">
       <input id="address" placeholder="Address">
       <input id="email" placeholder="Email">
-      <input id="note" placeholder="Note">
+      <input id="zalo" placeholder="Zalo (sđt hoặc link)">
+<input id="facebook" placeholder="Facebook link">
+<input id="messenger" placeholder="Messenger link">
+<input id="company" placeholder="Company">
+<input id="jobTitle" placeholder="Job Title">
+<input id="tags" placeholder="Tags (work,family)">
+<label>
+  <input type="checkbox" id="favorite"> ⭐ Favorite
+</label>
+<input id="note" placeholder="Note">
     </div>
 
     <!-- WEB -->
