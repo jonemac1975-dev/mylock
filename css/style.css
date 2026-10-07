@@ -452,3 +452,10 @@ color:yellow;
   overflow-y: auto;   /* 🔥 scroll ở đây */
   padding: 20px;
 }
+
+.btn[data-tip]{position:relative}
+.btn[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:5px 8px;border-radius:5px;font-size:12px;white-space:nowrap;opacity:0;visibility:hidden;pointer-events:none;z-index:9999}
+.btn[data-tip]:hover::after,.btn[data-tip].tip-show::after{opacity:1;visibility:visible}
+
+a[href][target="_blank"]{color:#facc15}
+a[href][target="_blank"]:hover{color:#fde68a}

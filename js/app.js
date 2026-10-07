@@ -2,15 +2,8 @@ import { login, logout, getUser } from "./auth.js";
 
 import { loadVault, saveVault, deleteVault, initVault } from "./vault.js";
 import { db,auth } from "./firebase.js";
-import {
-  onAuthStateChanged,
-  getRedirectResult,
-  setPersistence,
-  browserLocalPersistence
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { onAuthStateChanged, getRedirectResult, setPersistence, browserLocalPersistence} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { initKey, decrypt, encrypt } from "./crypto.js";
-
-
 
 
 /* DOM */
@@ -331,11 +324,12 @@ btnSave.onclick = async () => {
   } 
   else {
     item = {
-      type: type.value,
-      title: title.value,
-      username: username.value,
-      password: password.value
-    };
+  type: type.value,
+  title: title.value,
+  username: username.value,
+  password: password.value,
+  image: defaultImage || null
+};
   }
 
   // 🔥 CHECK TRÙNG (đặt ở đây)
@@ -388,11 +382,13 @@ function collectInfoData() {
 }
 
   if (subType.value === "note") {
-    return {
-      date: document.getElementById("date").value,
-      content: document.getElementById("content").value
-    };
-  }
+  return {
+    date: document.getElementById("date").value,
+    content: document.getElementById("content").value,
+    images: noteImages || [],
+    videos: noteVideos || []
+  };
+}
 
   return {};
 }
@@ -417,6 +413,16 @@ document.querySelectorAll(".menu div").forEach((el) => {
 /* ================= SEARCH ================= */
 
 search.oninput = render;
+
+
+
+document.addEventListener("pointerdown",e=>{
+  const btn=e.target.closest(".btn[data-tip]");
+  if(!btn)return;
+  document.querySelectorAll(".btn.tip-show").forEach(x=>x.classList.remove("tip-show"));
+  btn.classList.add("tip-show");
+  setTimeout(()=>btn.classList.remove("tip-show"),1500);
+});
 
 /* ================= RENDER ================= */
 
@@ -476,16 +482,14 @@ function render() {
 
       // ================= UI =================
       div.innerHTML = `
-        <div class="top"
-             style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:6px">
-          <span class="icon">${icon}</span>
-          <span class="title">${i.title || ""}</span>
-        </div>
-
-        <div style="opacity:0.8">${i.username || ""}</div>
-
-        <span class="pass">******</span>
-      `;
+  <div class="top" style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:6px">
+    <span class="icon">${icon}</span>
+    <span class="title">${i.title || ""}</span>
+  </div>
+  <div style="opacity:0.8">${i.username || ""}</div>
+  ${i.image?.url ? `<img src="${i.image.url}" onclick="window.openDefaultImage('${i.image.url}')" style="width:80px;height:80px;object-fit:cover;border-radius:8px;margin-top:8px;display:block;cursor:zoom-in">` : ""}
+  <span class="pass">******</span>
+`;
 
       const passEl = div.querySelector(".pass");
 
@@ -497,6 +501,7 @@ function render() {
       btnEdit.className = "btn";
       btnEdit.classList.add("edit");
       btnEdit.textContent = "✏️";
+	btnEdit.dataset.tip = "Chỉnh sửa";
 
       btnEdit.onclick = () => {
   editingId = i.id;
@@ -535,10 +540,12 @@ document.getElementById("messenger").value = i.data.messenger || "";
 
     }
 
-    // ===== NOTE =====
+        // ===== NOTE =====
     if (i.subType === "note") {
       document.getElementById("date").value = i.data.date || "";
       document.getElementById("content").value = i.data.content || "";
+      noteImages = i.data.images || [];
+      noteVideos = i.data.videos || [];
     }
 
   } else if (i.type === "social") {
@@ -546,10 +553,19 @@ document.getElementById("messenger").value = i.data.messenger || "";
     socialUser.value = i.data.username || "";
     socialPass.value = i.data.password || "";
   } else {
-    title.value = i.title || "";
-    username.value = i.username || "";
-    password.value = i.password || "";
+  title.value = i.title || "";
+  username.value = i.username || "";
+  password.value = i.password || "";
+
+  defaultImage = i.image || null;
+
+  const preview = document.getElementById("defaultImagePreview");
+  if (preview) {
+    preview.innerHTML = defaultImage?.url
+      ? `<img src="${defaultImage.url}" onclick="window.openDefaultImage('${defaultImage.url}')" style="width:100px;height:100px;object-fit:cover;border-radius:8px;margin-top:8px;cursor:zoom-in">`
+      : "";
   }
+}
 
   modal.style.display = "flex";
 };
@@ -559,6 +575,7 @@ document.getElementById("messenger").value = i.data.messenger || "";
       btnShow.className = "btn";
       btnShow.classList.add("view");
       btnShow.textContent = "👁️";
+btnShow.dataset.tip = "Xem mật khẩu";
 
       btnShow.onclick = () => {
         show = !show;
@@ -570,6 +587,7 @@ document.getElementById("messenger").value = i.data.messenger || "";
       btnCopy.className = "btn";
       btnCopy.classList.add("copy");
       btnCopy.textContent = "📋";
+btnCopy.dataset.tip = "Sao chép";
 
       btnCopy.onclick = () => duplicateItem(i);
 
@@ -578,6 +596,7 @@ document.getElementById("messenger").value = i.data.messenger || "";
       btnDel.className = "btn";
      btnDel.classList.add("delete");
       btnDel.textContent = "🗑️";
+btnDel.dataset.tip = "Xóa";
 
       btnDel.onclick = async () => {
   if (confirm("Xóa item này?")) {
@@ -602,6 +621,19 @@ action.style.flexWrap = "nowrap";
       list.appendChild(div);
     });
 }
+
+
+window.openDefaultImage = function(url) {
+  const old = document.getElementById("defaultImageViewer");
+  if (old) old.remove();
+
+  const viewer = document.createElement("div");
+  viewer.id = "defaultImageViewer";
+  viewer.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out";
+  viewer.innerHTML = `<img src="${url}" style="max-width:95%;max-height:95%;object-fit:contain;border-radius:8px">`;
+  viewer.onclick = () => viewer.remove();
+  document.body.appendChild(viewer);
+};
 
 
 function renderInfoItem(i) {
@@ -638,6 +670,7 @@ function renderInfoItem(i) {
     btnView = document.createElement("button");
     btnView.className = "btn view";
     btnView.textContent = "👁️";
+btnView.dataset.tip = "Xem thông tin";
     btnView.onclick = () => showPersonalDetail(i);
   }
 
@@ -656,6 +689,8 @@ function renderInfoItem(i) {
     const btnShow = document.createElement("button");
     btnShow.className = "btn view";
     btnShow.textContent = "👁️";
+btnShow.dataset.tip = "Xem mật khẩu";
+
     btnShow.onclick = () => {
       show = !show;
       passEl.textContent = show ? d.password : "******";
@@ -664,6 +699,8 @@ function renderInfoItem(i) {
     const btnCopy = document.createElement("button");
     btnCopy.className = "btn copy";
     btnCopy.textContent = "📋";
+btnCopy.dataset.tip = "Sao chép";
+
     btnCopy.onclick = () => duplicateItem(i);
 
     const actionExtra = document.createElement("div");
@@ -694,6 +731,7 @@ function renderInfoItem(i) {
   btnCall.href = d.tel ? `tel:${d.tel}` : "#";
   btnCall.className = "btn";
   btnCall.textContent = "📞";
+btnCall.dataset.tip = "Gọi điện";
 
   // 💬 ZALO
   const btnZalo = document.createElement("a");
@@ -701,6 +739,7 @@ function renderInfoItem(i) {
   btnZalo.target = "_blank";
   btnZalo.className = "btn";
   btnZalo.textContent = "💬";
+btnZalo.dataset.tip = "Zalo";
 
   // 📘 FACEBOOK
   const btnFb = document.createElement("a");
@@ -708,11 +747,13 @@ function renderInfoItem(i) {
   btnFb.target = "_blank";
   btnFb.className = "btn";
   btnFb.textContent = "📘";
+btnFb.dataset.tip = "Facebook";
 
   // ✏️ EDIT
   const btnEdit = document.createElement("button");
   btnEdit.className = "btn edit";
   btnEdit.textContent = "✏️";
+btnEdit.dataset.tip = "Chỉnh sửa";
 
   btnEdit.onclick = () => {
     clearForm();
@@ -764,10 +805,61 @@ function renderInfoItem(i) {
       document.getElementById("noteWeb").value = d.note || "";
     }
 
-    if (i.subType === "note") {
-      document.getElementById("date").value = d.date || "";
-      document.getElementById("content").value = d.content || "";
-    }
+        if (i.subType === "note") {
+  document.getElementById("date").value = d.date || "";
+  document.getElementById("content").value = d.content || "";
+  noteImages = d.images || [];
+  noteVideos = d.videos || [];
+
+  const imageInput = document.getElementById("noteImages");
+  const videoInput = document.getElementById("noteVideos");
+
+  let imagePreview = document.getElementById("noteImagesPreview");
+  let videoPreview = document.getElementById("noteVideosPreview");
+
+  if (imageInput && !imagePreview) {
+    imagePreview = document.createElement("div");
+    imagePreview.id = "noteImagesPreview";
+    imageInput.after(imagePreview);
+  }
+
+  if (videoInput && !videoPreview) {
+    videoPreview = document.createElement("div");
+    videoPreview.id = "noteVideosPreview";
+    videoInput.after(videoPreview);
+  }
+
+  if (imagePreview) {
+  imagePreview.innerHTML = noteImages.map((item,index) => `
+    <div style="display:inline-block;margin:8px 8px 0 0;text-align:center">
+      <img src="${item.url}" onclick="window.openNoteImage('${item.url}')" style="width:80px;height:80px;object-fit:cover;border-radius:8px;display:block;cursor:zoom-in">
+      <small>Ảnh ${index + 1}</small>
+    </div>
+  `).join("");
+}
+
+window.openNoteImage = function(url) {
+  const old = document.getElementById("noteImageViewer");
+  if (old) old.remove();
+
+  const viewer = document.createElement("div");
+  viewer.id = "noteImageViewer";
+  viewer.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out";
+  viewer.innerHTML = `<img src="${url}" style="max-width:95%;max-height:95%;object-fit:contain;border-radius:8px">`;
+  viewer.onclick = () => viewer.remove();
+  document.body.appendChild(viewer);
+};
+
+
+  if (videoPreview) {
+    videoPreview.innerHTML = noteVideos.map((item,index) => `
+      <div style="margin-top:8px">
+        <video src="${item.url}" controls style="width:220px;max-width:100%;border-radius:8px"></video>
+        <div><small>Video ${index + 1}</small></div>
+      </div>
+    `).join("");
+  }
+}
 
     modal.style.display = "flex";
   };
@@ -776,6 +868,7 @@ function renderInfoItem(i) {
   const btnDel = document.createElement("button");
   btnDel.className = "btn delete";
   btnDel.textContent = "🗑️";
+btnDel.dataset.tip = "Xóa";
 
   btnDel.onclick = async () => {
     if (confirm("Xóa item này?")) {
@@ -801,6 +894,13 @@ function renderInfoItem(i) {
 
 btnNew.onclick = () => {
   editingId = null;
+noteImages = [];
+noteVideos = [];
+
+const imagePreview = document.getElementById("noteImagesPreview");
+const videoPreview = document.getElementById("noteVideosPreview");
+if (imagePreview) imagePreview.innerHTML = "";
+if (videoPreview) videoPreview.innerHTML = "";
 
   // ===== RESET TYPE =====
   type.value = "mail";
@@ -811,6 +911,10 @@ toggleForm();
   title.value = "";
   username.value = "";
   password.value = "";
+defaultImage = null;
+
+const defaultImagePreview = document.getElementById("defaultImagePreview");
+if (defaultImagePreview) defaultImagePreview.innerHTML = "";
 
   // ===== RESET SOCIAL =====
   if (socialUrl) socialUrl.value = "";
@@ -1253,6 +1357,8 @@ function clearForm() {
   // ===== INFO - NOTE =====
   setVal("date");
   setVal("content");
+  noteImages = [];
+  noteVideos = [];
 
   // reset state
 
@@ -1266,10 +1372,13 @@ function renderSocialItem(i) {
   const data = i.data || {};
 
   div.innerHTML = `
-    🌐 <b>${data.url || ""}</b>
-    <div>${data.username || ""}</div>
-    <div class="pass">******</div>
-  `;
+  🌐 <a href="${data.url || "#"}" target="_blank" rel="noopener noreferrer" style="font-weight:600">${data.url || ""}</a>
+  <div>${data.username || ""}</div>
+  <div class="pass">******</div>
+`;
+
+const linkEl = div.querySelector("a");
+if (linkEl) linkEl.dataset.tip = "Mở liên kết";
 
   const passEl = div.querySelector(".pass");
 
@@ -1279,6 +1388,7 @@ function renderSocialItem(i) {
   const btnShow = document.createElement("button");
   btnShow.className = "btn view";
   btnShow.textContent = "👁️";
+btnShow.dataset.tip = "Xem thông tin";
 
   btnShow.onclick = () => {
     show = !show;
@@ -1289,6 +1399,8 @@ function renderSocialItem(i) {
   const btnCopy = document.createElement("button");
   btnCopy.className = "btn copy";
   btnCopy.textContent = "📋";
+btnCopy.dataset.tip = "Sao chép";
+
 
   btnCopy.onclick = () => duplicateItem(i);
 
@@ -1296,6 +1408,7 @@ function renderSocialItem(i) {
   const btnEdit = document.createElement("button");
   btnEdit.className = "btn";
   btnEdit.textContent = "✏️";
+btnEdit.dataset.tip = "Chỉnh sửa";
 
   btnEdit.onclick = () => {
     editingId = i.id;
@@ -1318,6 +1431,7 @@ clearForm(); // 🔥 reset sạch trước
   const btnDel = document.createElement("button");
   btnDel.className = "btn delete";
   btnDel.textContent = "🗑️";
+btnDel.dataset.tip = "Xóa";
 
   btnDel.onclick = async () => {
     if (confirm("Xóa item này?")) {
@@ -1336,9 +1450,6 @@ clearForm(); // 🔥 reset sạch trước
   div.appendChild(action);
   list.appendChild(div);
 }
-
-
-
 
 
 window.registerFaceID = async () => {
@@ -1601,54 +1712,133 @@ document.querySelectorAll(".menu div").forEach((el) => {
 });
 
 
-
-
 let currentAvatar = "";
 
-document.getElementById("avatarInput").onchange = (e) => {
+document.getElementById("avatarInput").onchange = async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
+  const preview = document.getElementById("avatarPreview");
+  preview.src = URL.createObjectURL(file);
 
-  reader.onload = (ev) => {
-    const img = new Image();
-    img.src = ev.target.result;
+  try {
+    showToast("☁️ Đang tải ảnh lên Cloudinary...");
 
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "mylock_images");
 
-      const maxSize = 200;
-      let w = img.width;
-      let h = img.height;
+    const response = await fetch("https://api.cloudinary.com/v1_1/mylock/image/upload", {
+      method: "POST",
+      body: formData
+    });
 
-      if (w > h) {
-        if (w > maxSize) {
-          h *= maxSize / w;
-          w = maxSize;
-        }
-      } else {
-        if (h > maxSize) {
-          w *= maxSize / h;
-          h = maxSize;
-        }
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error?.message || `HTTP ${response.status}`);
+    }
+
+    currentAvatar = data.secure_url;
+    preview.src = currentAvatar;
+
+    showToast("✅ Ảnh đã lưu Cloudinary");
+  } catch (err) {
+    console.error(err);
+    currentAvatar = "";
+    showToast("❌ Upload ảnh thất bại");
+  }
+};
+
+const noteImagesInput = document.getElementById("noteImages");
+const noteVideosInput = document.getElementById("noteVideos");
+
+let noteImages = [];
+let noteVideos = [];
+
+async function uploadCloudinary(file, preset, resourceType) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", preset);
+
+  const response = await fetch(`https://api.cloudinary.com/v1_1/mylock/${resourceType}/upload`, {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || `HTTP ${response.status}`);
+  }
+
+  return {
+    url: data.secure_url,
+    public_id: data.public_id
+  };
+}
+
+if (noteImagesInput) {
+  noteImagesInput.addEventListener("change", async () => {
+    noteImages = [];
+
+    for (const file of noteImagesInput.files) {
+      try {
+        showToast("☁️ Đang tải ảnh lên Cloudinary...");
+        const data = await uploadCloudinary(file, "mylock_images", "image");
+        noteImages.push(data);
+      } catch (err) {
+        console.error(err);
+        showToast("❌ Upload ảnh thất bại");
+      }
+    }
+
+    showToast(`✅ Đã tải ${noteImages.length} ảnh`);
+  });
+}
+
+if (noteVideosInput) {
+  noteVideosInput.addEventListener("change", async () => {
+    noteVideos = [];
+
+    for (const file of noteVideosInput.files) {
+      try {
+        showToast("☁️ Đang tải video lên Cloudinary...");
+        const data = await uploadCloudinary(file, "mylock_videos", "video");
+        noteVideos.push(data);
+      } catch (err) {
+        console.error(err);
+        showToast("❌ Upload video thất bại");
+      }
+    }
+
+    showToast(`✅ Đã tải ${noteVideos.length} video`);
+  });
+}
+
+const defaultImageInput = document.getElementById("defaultImage");
+let defaultImage = null;
+
+if (defaultImageInput) {
+  defaultImageInput.addEventListener("change", async () => {
+    const file = defaultImageInput.files[0];
+    if (!file) return;
+
+    try {
+      showToast("☁️ Đang tải ảnh lên Cloudinary...");
+      const data = await uploadCloudinary(file,"mylock_images","image");
+      defaultImage = data;
+
+      const preview = document.getElementById("defaultImagePreview");
+      if (preview) {
+        preview.innerHTML = `<img src="${data.url}" style="width:100px;height:100px;object-fit:cover;border-radius:8px;margin-top:8px">`;
       }
 
-      canvas.width = w;
-      canvas.height = h;
-
-      ctx.drawImage(img, 0, 0, w, h);
-
-      const base64 = canvas.toDataURL("image/jpeg", 0.7);
-
-      // 👉 preview
-      document.getElementById("avatarPreview").src = base64;
-
-      // 👉 lưu để save
-      currentAvatar = base64;
-    };
-  };
-
-  reader.readAsDataURL(file);
-};
+      showToast("✅ Ảnh đã tải lên Cloudinary");
+    } catch (err) {
+      console.error(err);
+      defaultImage = null;
+      showToast("❌ Upload ảnh thất bại");
+    }
+  });
+}

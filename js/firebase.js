@@ -1,11 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-import {
-  initializeAuth,
-  browserLocalPersistence,
-  browserPopupRedirectResolver
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {initializeAuth,browserLocalPersistence,browserPopupRedirectResolver} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const config = {
   apiKey: "AIzaSyCYbp4nOHhDbgFN68SW-RdE9M-HGWITFKU",

@@ -88,12 +88,16 @@
     <option value="info">Information</option>
   </select>
 
+ 
   <!-- 🔥 FORM CŨ -->
-  <div id="form-default">
-    <input id="title" placeholder="Title">
-    <input id="username" placeholder="Username">
-    <input id="password" placeholder="Password">
-  </div>
+<div id="form-default">
+  <input id="title" placeholder="Title">
+  <input id="username" placeholder="Username">
+  <input id="password" placeholder="Password">
+  <label>🖼️ Ảnh</label>
+  <input type="file" id="defaultImage" accept="image/*">
+  <div id="defaultImagePreview"></div>
+</div>
 
 <!-- 🔥 FORM mạng xã hội -->
 
@@ -145,10 +149,14 @@
 </div>
 
     <!-- NOTE -->
-    <div id="info-note" style="display:none">
-      <input id="date" type="date">
-      <input id="content" placeholder="Content">
-    </div>
+<div id="info-note" style="display:none">
+  <input id="date" type="date">
+  <input id="content" placeholder="Content">
+  <label>🖼️ Images</label>
+  <input type="file" id="noteImages" accept="image/*" multiple>
+  <label>🎬 Videos</label>
+  <input type="file" id="noteVideos" accept="video/*" multiple>
+</div>
 
   </div>
 
