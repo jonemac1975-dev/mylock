@@ -323,14 +323,14 @@ btnSave.onclick = async () => {
     };
   } 
   else {
-    item = {
-  type: type.value,
-  title: title.value,
-  username: username.value,
-  password: password.value,
-  image: defaultImage || null
-};
-  }
+  item = {
+    type: type.value,
+    title: title.value,
+    username: username.value,
+    password: password.value,
+    images: defaultImage || []
+  };
+}
 
   // 🔥 CHECK TRÙNG (đặt ở đây)
   if (isDuplicateItem(item)) {
@@ -413,8 +413,6 @@ document.querySelectorAll(".menu div").forEach((el) => {
 /* ================= SEARCH ================= */
 
 search.oninput = render;
-
-
 
 document.addEventListener("pointerdown",e=>{
   const btn=e.target.closest(".btn[data-tip]");
@@ -560,11 +558,33 @@ document.getElementById("messenger").value = i.data.messenger || "";
   defaultImage = i.image || null;
 
   const preview = document.getElementById("defaultImagePreview");
-  if (preview) {
-    preview.innerHTML = defaultImage?.url
-      ? `<img src="${defaultImage.url}" onclick="window.openDefaultImage('${defaultImage.url}')" style="width:100px;height:100px;object-fit:cover;border-radius:8px;margin-top:8px;cursor:zoom-in">`
-      : "";
-  }
+  defaultImage = i.images || (i.image ? [i.image] : []);
+
+defaultImage = i.images || (i.image ? [i.image] : []);
+preview.innerHTML = "";
+
+defaultImage.forEach(item => {
+  const box = document.createElement("div");
+  box.style.cssText = "position:relative;display:inline-block;margin:8px 8px 0 0";
+
+  const img = document.createElement("img");
+  img.src = item.url;
+  img.style.cssText = "width:100px;height:100px;object-fit:cover;border-radius:8px;cursor:zoom-in";
+  img.onclick = () => window.openDefaultImage(item.url);
+
+  const del = document.createElement("button");
+  del.type = "button";
+  del.textContent = "❌";
+  del.style.cssText = "position:absolute;top:-6px;right:-6px;border:0;background:#fff;border-radius:50%;cursor:pointer;font-size:14px;padding:2px";
+  del.onclick = () => {
+    defaultImage = defaultImage.filter(x => x.url !== item.url);
+    box.remove();
+  };
+
+  box.appendChild(img);
+  box.appendChild(del);
+  preview.appendChild(box);
+});
 }
 
   modal.style.display = "flex";
@@ -751,20 +771,24 @@ btnFb.dataset.tip = "Facebook";
 
   // ✏️ EDIT
   const btnEdit = document.createElement("button");
+  btnEdit.type = "button";
   btnEdit.className = "btn edit";
   btnEdit.textContent = "✏️";
 btnEdit.dataset.tip = "Chỉnh sửa";
 
   btnEdit.onclick = () => {
+
     clearForm();
     editingId = i.id;
-
+modal.style.display = "flex";
     type.value = "info";
     formDefault.style.display = "none";
     formInfo.style.display = "block";
 
     subType.value = i.subType;
-    renderSubTypeUI();
+renderSubTypeUI();
+formInfo.style.display = "block";
+
 
     if (i.subType === "personal") {
   const d = i.data || {};
@@ -805,9 +829,14 @@ btnEdit.dataset.tip = "Chỉnh sửa";
       document.getElementById("noteWeb").value = d.note || "";
     }
 
-        if (i.subType === "note") {
+if (i.subType === "note") {
+
+
+  console.log("EDIT NOTE:", i);
+  console.log("DATE:", document.getElementById("date"),"CONTENT:",document.getElementById("content"));
   document.getElementById("date").value = d.date || "";
   document.getElementById("content").value = d.content || "";
+
   noteImages = d.images || [];
   noteVideos = d.videos || [];
 
@@ -830,12 +859,33 @@ btnEdit.dataset.tip = "Chỉnh sửa";
   }
 
   if (imagePreview) {
-  imagePreview.innerHTML = noteImages.map((item,index) => `
-    <div style="display:inline-block;margin:8px 8px 0 0;text-align:center">
-      <img src="${item.url}" onclick="window.openNoteImage('${item.url}')" style="width:80px;height:80px;object-fit:cover;border-radius:8px;display:block;cursor:zoom-in">
-      <small>Ảnh ${index + 1}</small>
-    </div>
-  `).join("");
+  imagePreview.innerHTML = "";
+  noteImages.forEach((item,index) => {
+    const box = document.createElement("div");
+    box.style.cssText = "position:relative;display:inline-block;margin:8px 8px 0 0;text-align:center";
+
+    const img = document.createElement("img");
+    img.src = item.url;
+    img.style.cssText = "width:80px;height:80px;object-fit:cover;border-radius:8px;display:block;cursor:zoom-in";
+    img.onclick = () => window.openNoteImage(item.url);
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.textContent = "❌";
+    del.style.cssText = "position:absolute;top:-6px;right:-6px;border:0;background:#fff;border-radius:50%;cursor:pointer;font-size:14px;padding:2px";
+    del.onclick = () => {
+      noteImages = noteImages.filter(x => x.url !== item.url);
+      box.remove();
+    };
+
+    const label = document.createElement("small");
+    label.textContent = `Ảnh ${index + 1}`;
+
+    box.appendChild(img);
+    box.appendChild(del);
+    box.appendChild(label);
+    imagePreview.appendChild(box);
+  });
 }
 
 window.openNoteImage = function(url) {
@@ -852,17 +902,38 @@ window.openNoteImage = function(url) {
 
 
   if (videoPreview) {
-    videoPreview.innerHTML = noteVideos.map((item,index) => `
-      <div style="margin-top:8px">
-        <video src="${item.url}" controls style="width:220px;max-width:100%;border-radius:8px"></video>
-        <div><small>Video ${index + 1}</small></div>
-      </div>
-    `).join("");
-  }
-}
+  videoPreview.innerHTML = "";
+  noteVideos.forEach((item,index) => {
+    const box = document.createElement("div");
+    box.style.cssText = "position:relative;display:inline-block;margin:8px 8px 0 0";
 
-    modal.style.display = "flex";
-  };
+    const video = document.createElement("video");
+    video.src = item.url;
+    video.controls = true;
+    video.style.cssText = "width:220px;max-width:100%;border-radius:8px";
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.textContent = "❌";
+    del.style.cssText = "position:absolute;top:-6px;right:-6px;border:0;background:#fff;border-radius:50%;cursor:pointer;font-size:14px;padding:2px";
+    del.onclick = () => {
+      noteVideos = noteVideos.filter(x => x.url !== item.url);
+      box.remove();
+    };
+
+    const label = document.createElement("div");
+    const small = document.createElement("small");
+    small.textContent = `Video ${index + 1}`;
+    label.appendChild(small);
+
+    box.appendChild(video);
+    box.appendChild(del);
+    box.appendChild(label);
+    videoPreview.appendChild(box);
+   });
+}
+}
+};
 
   // 🗑️ DELETE
   const btnDel = document.createElement("button");
@@ -911,7 +982,7 @@ toggleForm();
   title.value = "";
   username.value = "";
   password.value = "";
-defaultImage = null;
+defaultImage = [];
 
 const defaultImagePreview = document.getElementById("defaultImagePreview");
 if (defaultImagePreview) defaultImagePreview.innerHTML = "";
@@ -1780,13 +1851,35 @@ async function uploadCloudinary(file, preset, resourceType) {
 
 if (noteImagesInput) {
   noteImagesInput.addEventListener("change", async () => {
-    noteImages = [];
-
+    
     for (const file of noteImagesInput.files) {
       try {
         showToast("☁️ Đang tải ảnh lên Cloudinary...");
         const data = await uploadCloudinary(file, "mylock_images", "image");
         noteImages.push(data);
+const preview = document.getElementById("noteImagesPreview");
+if (preview) {
+  const box = document.createElement("div");
+  box.style.cssText = "position:relative;display:inline-block;margin:8px 8px 0 0";
+
+  const img = document.createElement("img");
+  img.src = data.url;
+  img.style.cssText = "width:100px;height:100px;object-fit:cover;border-radius:8px;cursor:zoom-in";
+  img.onclick = () => window.openNoteImage(data.url);
+
+  const del = document.createElement("button");
+  del.type = "button";
+  del.textContent = "❌";
+  del.style.cssText = "position:absolute;top:-6px;right:-6px;border:0;background:#fff;border-radius:50%;cursor:pointer;font-size:14px;padding:2px";
+  del.onclick = () => {
+    noteImages = noteImages.filter(item => item.url !== data.url);
+    box.remove();
+  };
+
+  box.appendChild(img);
+  box.appendChild(del);
+  preview.appendChild(box);
+}
       } catch (err) {
         console.error(err);
         showToast("❌ Upload ảnh thất bại");
@@ -1799,13 +1892,36 @@ if (noteImagesInput) {
 
 if (noteVideosInput) {
   noteVideosInput.addEventListener("change", async () => {
-    noteVideos = [];
+    
 
     for (const file of noteVideosInput.files) {
       try {
         showToast("☁️ Đang tải video lên Cloudinary...");
         const data = await uploadCloudinary(file, "mylock_videos", "video");
         noteVideos.push(data);
+const preview = document.getElementById("noteVideosPreview");
+if (preview) {
+  const box = document.createElement("div");
+  box.style.cssText = "position:relative;display:inline-block;margin:8px 8px 0 0";
+
+  const video = document.createElement("video");
+  video.src = data.url;
+  video.controls = true;
+  video.style.cssText = "width:220px;max-width:100%;border-radius:8px";
+
+  const del = document.createElement("button");
+  del.type = "button";
+  del.textContent = "❌";
+  del.style.cssText = "position:absolute;top:-6px;right:-6px;border:0;background:#fff;border-radius:50%;cursor:pointer;font-size:14px;padding:2px";
+  del.onclick = () => {
+    noteVideos = noteVideos.filter(item => item.url !== data.url);
+    box.remove();
+  };
+
+  box.appendChild(video);
+  box.appendChild(del);
+  preview.appendChild(box);
+}
       } catch (err) {
         console.error(err);
         showToast("❌ Upload video thất bại");
@@ -1817,28 +1933,49 @@ if (noteVideosInput) {
 }
 
 const defaultImageInput = document.getElementById("defaultImage");
-let defaultImage = null;
+let defaultImage = [];
 
 if (defaultImageInput) {
   defaultImageInput.addEventListener("change", async () => {
-    const file = defaultImageInput.files[0];
-    if (!file) return;
+   
+    const preview = document.getElementById("defaultImagePreview");
 
-    try {
-      showToast("☁️ Đang tải ảnh lên Cloudinary...");
-      const data = await uploadCloudinary(file,"mylock_images","image");
-      defaultImage = data;
 
-      const preview = document.getElementById("defaultImagePreview");
-      if (preview) {
-        preview.innerHTML = `<img src="${data.url}" style="width:100px;height:100px;object-fit:cover;border-radius:8px;margin-top:8px">`;
+    for (const file of defaultImageInput.files) {
+      try {
+        showToast("☁️ Đang tải ảnh lên Cloudinary...");
+        const data = await uploadCloudinary(file,"mylock_images","image");
+        defaultImage.push(data);
+
+        if (preview) {
+          const box = document.createElement("div");
+box.style.cssText = "position:relative;display:inline-block;margin:8px 8px 0 0";
+
+const img = document.createElement("img");
+img.src = data.url;
+img.style.cssText = "width:100px;height:100px;object-fit:cover;border-radius:8px;cursor:zoom-in";
+img.onclick = () => window.openDefaultImage(data.url);
+
+const del = document.createElement("button");
+del.type = "button";
+del.textContent = "❌";
+del.style.cssText = "position:absolute;top:-6px;right:-6px;border:0;background:#fff;border-radius:50%;cursor:pointer;font-size:14px;padding:2px";
+
+del.onclick = () => {
+  defaultImage = defaultImage.filter(item => item.url !== data.url);
+  box.remove();
+};
+
+box.appendChild(img);
+box.appendChild(del);
+preview.appendChild(box);
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("❌ Upload ảnh thất bại");
       }
-
-      showToast("✅ Ảnh đã tải lên Cloudinary");
-    } catch (err) {
-      console.error(err);
-      defaultImage = null;
-      showToast("❌ Upload ảnh thất bại");
     }
+
+    showToast(`✅ Đã tải ${defaultImage.length} ảnh`);
   });
 }
