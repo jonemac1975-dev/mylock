@@ -1,7 +1,7 @@
 import { login, logout } from "./auth.js";
 import { loadVault, saveVault, deleteVault, initVault } from "./vault.js";
 import { auth } from "./firebase.js";
-import { onAuthStateChanged, getRedirectResult, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { initKey, decrypt, encrypt } from "./crypto.js";
 
 const loginBox = document.getElementById("login");
@@ -49,12 +49,10 @@ let defaultImage = [];
 let selectedMedia = new Set();
 
 async function initAuth() {
-  await setPersistence(auth, browserLocalPersistence);
   try {
-    const result = await getRedirectResult(auth);
-    if (result?.user) user = result.user;
+    await setPersistence(auth,browserLocalPersistence);
   } catch (err) {
-    console.error(err);
+    alert("LỖI KHỞI TẠO AUTH: " + err.message);
   } finally {
     isRedirecting = false;
   }
