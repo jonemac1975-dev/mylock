@@ -285,83 +285,6 @@ color:yellow;
   }
 }
 
-/*====Mobi=====*/
-.header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: nowrap; /* 🔥 không cho xuống dòng */
-  overflow-x: auto;  /* 🔥 cho scroll ngang nếu thiếu chỗ */
-  padding-bottom: 6px;
-  padding-top: env(safe-area-inset-top);
-}
-
-/* ẩn scrollbar cho đẹp */
-.header::-webkit-scrollbar {
-  display: none;
-}
-
-.header input {
-  min-width: 140px;
-  flex-shrink: 0;
-}
-
-.header button {
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-@media (max-width: 768px) {
-  .modal {
-    align-items: flex-end;
-  }
-
-  .modal-content {
-    width: 100%;
-    border-radius: 20px 20px 0 0;
-  }
-}
-
-@media (max-width: 768px) {
-
-  .sidebar {
-    width: 100%;
-    padding: 10px;
-  }
-
-  .menu {
-    display: flex;
-    flex-direction: column; /* 🔥 QUAN TRỌNG: chuyển lại dọc */
-    gap: 6px;
-    width: 100%;
-  }
-
-  .menu div {
-    width: 100%;            /* 🔥 full width */
-    white-space: normal;    /* 🔥 cho xuống dòng nếu dài */
-  }
-}
-
-@media (max-width: 768px) {
-
-  body {
-    flex-direction: column; /* 🔥 từ 2 cột → 1 cột */
-  }
-  .sidebar {
-    width: 35%;
-  }
-  .main {
-    width: 65%;
-  }
-}
-
-.btn {
-  padding: 4px 4px;     /* nhỏ lại */
-  font-size: 12px;      /* giảm chữ */
-  min-width: 28px;      /* giữ kích thước tối thiểu */
-  height: 28px;
-  border-radius: 6px;
-}
 
 
 /* ===== BUTTON BASE (QUAN TRỌNG NHẤT) ===== */
@@ -459,3 +382,114 @@ color:yellow;
 
 a[href][target="_blank"]{color:#facc15}
 a[href][target="_blank"]:hover{color:#fde68a}
+
+
+
+@media (max-width: 768px) {
+  /* Không chia sidebar/main thành hai cột */
+  #app {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Thanh chức năng ở trên cùng */
+  .main {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .header {
+    order: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+    padding: 5px;
+    overflow: visible;
+  }
+
+  /* Các nút chức năng nằm hàng đầu */
+  .header button {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    min-height: 40px;
+    padding: 5px 4px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  /* Search nằm nguyên một hàng phía dưới */
+  .header input {
+    order: 10;
+    flex: 0 0 100%;
+    width: 100%;
+    min-width: 0;
+    min-height: 34px;
+    margin: 0;
+    font-size: 16px;
+  }
+
+  /* Tiêu đề My Pass và danh mục nằm dưới Search */
+  .sidebar {
+    order: 1;
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100%;
+    padding: 8px 10px;
+    overflow: hidden;
+  }
+
+  .sidebar h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+  }
+
+  .menu {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 7px;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 5px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .menu div {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 40px;
+    padding: 10px 12px;
+    white-space: nowrap;
+    font-size: 14px;
+  }
+
+  /* Danh sách chiếm toàn bộ phần còn lại */
+  .list {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .item {
+    width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
