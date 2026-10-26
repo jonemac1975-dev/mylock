@@ -408,15 +408,21 @@ a[href][target="_blank"]:hover{color:#fde68a}
     overflow: hidden;
   }
 
+  
   .header {
     order: 0;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
     width: 100%;
-    padding: 5px;
+
+    /* Chừa khoảng trống cho thanh trạng thái điện thoại */
+    padding: 16px 8px 8px;
+    padding-top: max(16px, env(safe-area-inset-top));
+
     overflow: visible;
   }
+
 
   /* Các nút chức năng nằm hàng đầu */
   .header button {
